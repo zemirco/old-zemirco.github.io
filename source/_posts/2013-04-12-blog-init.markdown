@@ -1,0 +1,20 @@
+---
+layout: post
+title: "Blog Init"
+comments: true
+categories:
+---
+
+I've been playing with the idea for some time and today I finally start my own blog.
+
+You'll read about JavaScript, web technologies and solutions I came across developing web applications.
+
+ The blog is powered by [Octopress](http://octopress.org/) and
+ hosted on [GitHub pages](http://pages.github.com/). You can find the repo at
+ [zemirco.github.io](https://github.com/zeMirco/zemirco.github.io). I got the domain
+ [mircozeiss.com](http://www.mircozeiss.com) from [Hetzner](http://www.hetzner.de/en/) and, being
+ a developer and not a designer, I'm very thankful for [Lucas Lew](http://lucaslew.com/) who
+ created the [whitespace](https://github.com/lucaslew/whitespace) theme.
+
+If you've got some ideas for improvements send me an email to
+[mirco.zeiss@gmail.com](mailto:mirco.zeiss@gmail.com) or write something below.

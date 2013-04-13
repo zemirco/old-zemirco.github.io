@@ -1,0 +1,8 @@
+extends layout
+
+block content
+  div(ng-controller="UserTwoCtrl")
+    h1= title
+    p Welcome to #{title}
+    ul
+      li(ng-repeat="user in users") {{user.name}} - {{user.email}}
