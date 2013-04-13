@@ -1,15 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
-        <loc>http://zeMirco.github.io/blog/archives/</loc>
+        <loc>http://mircozeiss.com/about.html</loc>
+        <lastmod>2013-04-13T17:00:17+02:00</lastmod>
+    </url>
+    <url>
+        <loc>http://mircozeiss.com/blog/archives/</loc>
         <lastmod>2013-04-13T16:55:52+02:00</lastmod>
     </url>
     <url>
-        <loc>http://zeMirco.github.io/</loc>
+        <loc>http://mircozeiss.com/</loc>
         <lastmod>2013-04-13T16:55:52+02:00</lastmod>
     </url>
     <url>
-        <loc>http://zeMirco.github.io/robots.txt</loc>
+        <loc>http://mircozeiss.com/robots.txt</loc>
         <lastmod>2013-04-13T16:55:52+02:00</lastmod>
     </url>
 </urlset>
