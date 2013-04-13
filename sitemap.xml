@@ -1,16 +1,26 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
+        <loc>http://mircozeiss.com/blog-init/</loc>
+        <lastmod>2013-04-13T17:13:43+02:00</lastmod>
+    </url>
+    <url>
+        <loc>
+            http://mircozeiss.com/how-to-pass-javascript-variables-from-a-server-to-angular/
+        </loc>
+        <lastmod>2013-04-13T17:16:53+02:00</lastmod>
+    </url>
+    <url>
         <loc>http://mircozeiss.com/about.html</loc>
-        <lastmod>2013-04-13T17:00:17+02:00</lastmod>
+        <lastmod>2013-04-13T17:23:26+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/blog/archives/</loc>
-        <lastmod>2013-04-13T16:55:52+02:00</lastmod>
+        <lastmod>2013-04-13T17:16:53+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/</loc>
-        <lastmod>2013-04-13T16:55:52+02:00</lastmod>
+        <lastmod>2013-04-13T17:16:53+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/robots.txt</loc>
