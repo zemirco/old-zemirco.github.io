@@ -377,7 +377,7 @@ whether solution two or three fits better. I personally tend to use the last sol
 one less request to the server.
 
 As promised at the beginning you can find the working example at GitHub under
- [server-vars-ngcontroller](https://github.com/zeMirco/blog/tree/master/code-examples/server-vars-ngcontroller).
+ [server-vars-ngcontroller](https://github.com/zeMirco/zemirco.github.io/tree/source/code-examples/server-vars-ngcontroller).
 
 **Pro Tip**: Don't mix Jade's `for user in users` and `ng-repeat="user in users"`
  from Angular. I did that once at the beginning and was totally frustrated
