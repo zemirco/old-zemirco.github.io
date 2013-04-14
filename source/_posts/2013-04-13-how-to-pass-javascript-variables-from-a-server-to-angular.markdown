@@ -212,11 +212,19 @@ function UserTwoCtrl($scope, $http) {
 ```
 
 As soon as the controller is initiated by Angular it automatically makes a
- GET request to `/solution-two/data` and assigns the fetched data to `$scope
- .users`. Now refresh the page and see what happened. You should see and
+ GET request to `/solution-two/data` and assigns the fetched data to `$scope.users`.
+ Now refresh the page and see what happened. You should see an
  error saying
 
+```
+Failed to load resource: the server responded with a status of 404 (Not Found)
+```
+
 Your terminal running the server should log
+
+```
+GET /solution-two/data 404
+```
 
 It simply means that we haven't implemented the route `GET
 /solution-two/data` yet. So let's do this by adding the following code to the
