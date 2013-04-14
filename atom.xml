@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-04-13T17:25:14+02:00</updated>
+  <updated>2013-04-14T12:03:43+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -293,11 +293,21 @@ functionality now.</p>
 
 
 <p>As soon as the controller is initiated by Angular it automatically makes a
- GET request to <code>/solution-two/data</code> and assigns the fetched data to <code>$scope
- .users</code>. Now refresh the page and see what happened. You should see and
+ GET request to <code>/solution-two/data</code> and assigns the fetched data to <code>$scope.users</code>.
+ Now refresh the page and see what happened. You should see an
  error saying</p>
 
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">Failed</span> <span class="nx">to</span> <span class="nx">load</span> <span class="nx">resource</span><span class="o">:</span> <span class="nx">the</span> <span class="nx">server</span> <span class="nx">responded</span> <span class="kd">with</span> <span class="nx">a</span> <span class="nx">status</span> <span class="nx">of</span> <span class="mi">404</span> <span class="p">(</span><span class="nx">Not</span> <span class="nx">Found</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
 <p>Your terminal running the server should log</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">GET</span> <span class="o">/</span><span class="nx">solution</span><span class="o">-</span><span class="nx">two</span><span class="o">/</span><span class="nx">data</span> <span class="mi">404</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>It simply means that we haven&#8217;t implemented the route <code>GET
 /solution-two/data</code> yet. So let&#8217;s do this by adding the following code to the
