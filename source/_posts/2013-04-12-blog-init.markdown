@@ -3,7 +3,6 @@ layout: post
 title: "Blog Init"
 comments: true
 categories:
-twitter_desc: "Starting my blog about JavaScript and web technologies"
 ---
 
 I've been playing with the idea for some time and today I finally start my own blog.

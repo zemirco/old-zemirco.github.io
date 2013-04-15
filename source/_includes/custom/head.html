@@ -10,5 +10,5 @@
   <meta name="twitter:creator" content="{{ site.twitter_user }}">
   <meta name="twitter:url" content="{% if canonical %}{{ canonical }}{% else %}{{ site.url }}{% endif %}">
   <meta name="twitter:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
-  <meta name="twitter:description" content="{{ page.twitter_desc }}">
+  <meta name="twitter:description" content="{{ description | strip_html | condense_spaces | truncate:200 }}">
 {% endif %}
