@@ -3,6 +3,7 @@ layout: post
 title: "How to pass JavaScript variables from a server to Angular.js"
 comments: true
 categories:
+twitter_desc: "Three different solutions for passing data from Express.js to an Angular.js controller"
 ---
 
 I came across the problem of sending JavaScript variables from my backend,
