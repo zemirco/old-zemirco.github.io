@@ -139,7 +139,7 @@ our JSON object. That's why we need `!{}`.
 
 Then we need to load the content of this variable into our Angular scope.
 This is necessary for the `ng-repeat` directive as it doesn't work with
-variables which are outside of the Angular scope. Open `controller.js` and
+variables, which are outside of the Angular scope. Open `controller.js` and
  put the following code inside.
 
 ```js
@@ -155,7 +155,7 @@ pros and cons.
 
 #### Pro
 
-Solution one is probably the easiest to understand and fastet to implement.
+Solution one is probably the easiest to understand and fastest to implement.
 Every step is comprehensible and nothing fancy is going on.
 
 #### Contra
@@ -252,14 +252,14 @@ it is the best solution to make an HTTP request from your frontend. You
 could, of course, make the request from the server, get the data and send it
 to the client as shown in solution one. This, however,
 adds unnecessary overhead to our server and by calling the API from the
-client we can save valuable ressources.
+client we can save valuable resources.
 
 #### Contra
 
-The second solutions needs the most additional code and also an extra route
+The second solution needs the most additional code and also an extra route
 from which the data is served as JSON. This can get a bit messy because you
-basically have to serve every route twice. One for the view and one for the
-data. Therefore it is still not the perfect solution which leads us to our last
+basically have to serve every route twice. Once for the view and once for the
+data. Therefore it is still not the perfect solution, which leads us to our last
 method.
 
 ### 3. Be smart and use ng-init
@@ -294,7 +294,7 @@ Let's have a look at the example from the Angular docs
 
 {% endraw %}
 
-The variable `$scope.greeting` holds the String `'Hello'` and `$scope.person='World'`. Both are avaible inside the scope although not explicitly
+The variable `$scope.greeting` holds the String `'Hello'` and `$scope.person='World'`. Both are available inside the scope although not explicitly
  specified inside a controller.
 
 We could rewrite and simplify the example like this
@@ -361,7 +361,7 @@ variable. Inside the template we convert the JSON object to its String
 representation and assign it to the Angular variable `users`. Later on we
 have access to this variable and use a regular `ngRepeat` directive to create
  the list of users. Start the server, navigate to `/solution-three` and
- you should the the expected list of users.
+ you should the expected list of users.
 
 #### Pro
 
