@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-04-15T18:31:55+02:00</updated>
+  <updated>2013-04-21T17:52:53+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -203,7 +203,7 @@ our JSON object. That&#8217;s why we need <code>!{}</code>.</p>
 
 <p>Then we need to load the content of this variable into our Angular scope.
 This is necessary for the <code>ng-repeat</code> directive as it doesn&#8217;t work with
-variables which are outside of the Angular scope. Open <code>controller.js</code> and
+variables, which are outside of the Angular scope. Open <code>controller.js</code> and
  put the following code inside.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -222,7 +222,7 @@ pros and cons.</p>
 
 <h4>Pro</h4>
 
-<p>Solution one is probably the easiest to understand and fastet to implement.
+<p>Solution one is probably the easiest to understand and fastest to implement.
 Every step is comprehensible and nothing fancy is going on.</p>
 
 <h4>Contra</h4>
@@ -338,14 +338,14 @@ it is the best solution to make an HTTP request from your frontend. You
 could, of course, make the request from the server, get the data and send it
 to the client as shown in solution one. This, however,
 adds unnecessary overhead to our server and by calling the API from the
-client we can save valuable ressources.</p>
+client we can save valuable resources.</p>
 
 <h4>Contra</h4>
 
-<p>The second solutions needs the most additional code and also an extra route
+<p>The second solution needs the most additional code and also an extra route
 from which the data is served as JSON. This can get a bit messy because you
-basically have to serve every route twice. One for the view and one for the
-data. Therefore it is still not the perfect solution which leads us to our last
+basically have to serve every route twice. Once for the view and once for the
+data. Therefore it is still not the perfect solution, which leads us to our last
 method.</p>
 
 <h3>3. Be smart and use ng-init</h3>
@@ -387,7 +387,7 @@ into scope and made available under this name.</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>The variable <code>$scope.greeting</code> holds the String <code>'Hello'</code> and <code>$scope.person='World'</code>. Both are avaible inside the scope although not explicitly
+<p>The variable <code>$scope.greeting</code> holds the String <code>'Hello'</code> and <code>$scope.person='World'</code>. Both are available inside the scope although not explicitly
  specified inside a controller.</p>
 
 <p>We could rewrite and simplify the example like this</p>
@@ -477,7 +477,7 @@ variable. Inside the template we convert the JSON object to its String
 representation and assign it to the Angular variable <code>users</code>. Later on we
 have access to this variable and use a regular <code>ngRepeat</code> directive to create
  the list of users. Start the server, navigate to <code>/solution-three</code> and
- you should the the expected list of users.</p>
+ you should the expected list of users.</p>
 
 <h4>Pro</h4>
 
