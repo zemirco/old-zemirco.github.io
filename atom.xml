@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-04-23T18:35:15+02:00</updated>
+  <updated>2013-04-23T18:37:29+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Async CouchDB queries with nano and promises]]></title>
-    <link href="http://mircozeiss.com/Async-CouchCB-queries-with-nano-and-promises/"/>
+    <link href="http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/"/>
     <updated>2013-04-21T00:00:00+02:00</updated>
-    <id>http://mircozeiss.com/Async-CouchCB-queries-with-nano-and-promises</id>
+    <id>http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises</id>
     <content type="html"><![CDATA[<p>This post is about CouchDB and its <code>MapReduce</code> functionality. I&#8217;ll use simple <code>reduce</code>
 functions to gather some statistics about soccer players. <a href="https://github.com/dscape/nano">Nano</a>
 is used the query the database from
