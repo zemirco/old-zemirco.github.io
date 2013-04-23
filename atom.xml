@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-04-21T17:52:53+02:00</updated>
+  <updated>2013-04-23T18:35:15+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,478 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Async CouchDB queries with nano and promises]]></title>
+    <link href="http://mircozeiss.com/Async-CouchCB-queries-with-nano-and-promises/"/>
+    <updated>2013-04-21T00:00:00+02:00</updated>
+    <id>http://mircozeiss.com/Async-CouchCB-queries-with-nano-and-promises</id>
+    <content type="html"><![CDATA[<p>This post is about CouchDB and its <code>MapReduce</code> functionality. I&#8217;ll use simple <code>reduce</code>
+functions to gather some statistics about soccer players. <a href="https://github.com/dscape/nano">Nano</a>
+is used the query the database from
+Node.js. To keep our code nice and tidy we&#8217;ll make use of <a href="https://github.com/promises-aplus/promises-spec">Promises</a>
+through the <a href="https://github.com/kriskowal/q">q</a> module.</p>
+
+<h3>1. CouchDB architecture</h3>
+
+<p>Assuming we want to record every goal in a match and create some statistics to see who
+ scored the most goals. Each goal is a single document in our CouchDB database</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="s2">&quot;_id&quot;</span><span class="o">:</span> <span class="s2">&quot;ee2459df977d62d196872dd0ae63ea13&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;_rev&quot;</span><span class="o">:</span> <span class="s2">&quot;1-e00b4c6130d022e7336cdafacd18f93a&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;playerId&quot;</span><span class="o">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;goal&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>type</code> key simply helps to differentiate between other documents (could be players with
+name, age, price, etc.) and our <code>goal</code> documents.</p>
+
+<p>With a simple <code>map</code> function we get every goal by player</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">emit</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">playerId</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The result of the <code>map</code> function looks similar to the following table</p>
+
+<table class="table table-striped table-hover table-condensed table-bordered">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“4”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“4”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“3”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“2”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>The <strong>key</strong> represents the <code>playerId</code> and the <strong>value</strong> is <code>1</code> for every key. We need this
+<strong>value</strong>
+later on to calculate the total amout of goals scored by each player.</p>
+
+<p>To get this total amout of goals we simply have to sum up all <strong>values</strong> per player. Therefore our <code>reduce</code>
+function looks like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">_sum</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>_sum</code> is a built in <code>reduce</code> function provided by CouchDB. More native functions can be found in the
+<a href="http://wiki.apache.org/couchdb/Built-In_Reduce_Functions">CouchDB Wiki</a>. The result of the above function looks like this</p>
+
+<table class="table table-striped table-hover table-condensed table-bordered">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“4”</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>“3”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“2”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>That&#8217;s exactly what we wanted. We can now query our view and pass the playerId as <strong>key</strong> to get the final value.</p>
+
+<h3>2. Using the database with nano</h3>
+
+<p>Several modules exist on <a href="https://npmjs.org/search?q=couchdb">npm</a> to interact with CouchDB. The most popular ones are
+probably</p>
+
+<ul>
+<li><a href="https://github.com/dscape/nano">nano</a> and</li>
+<li><a href="https://github.com/cloudhead/cradle">cradle</a></li>
+</ul>
+
+
+<p>In this post I&#8217;ll use nano. I haven&#8217;t used cradle yet but I&#8217;m sure it offers similar functionality.</p>
+
+<p>To save new documents to our db we use the <code>insert</code> function</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">id</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">doc</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">playerId</span><span class="o">:</span> <span class="nx">id</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">nano</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">doc</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;done&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The total amout of goals scored by each player is provided by the above created <code>MapReduce</code> function. We
+can query this view using nano&#8217;s <code>view</code> function</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="nx">playerId</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">body</span><span class="p">.</span><span class="nx">rows</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// no goals for this player</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">body</span><span class="p">.</span><span class="nx">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">value</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This gives us the sum for each player that we pass to CouchDB as a parameter <code>{key: playerId}</code>.</p>
+
+<p>So, now we can store new documents and retrieve the sum via nano from our db. The problem is loading
+multiple sums for different players at the same time and then display the results to our users. The easiest solution
+is using a series of callback functions</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">1</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">bodyOne</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">2</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">bodyTwo</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>     <span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">3</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">bodyThree</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>       <span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">4</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">bodyFour</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>         <span class="p">...</span>
+</span><span class='line'>       <span class="p">});</span>
+</span><span class='line'>     <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That approach leads to the famous spaghetti code/callback hell/pyramide/christmas tree/you name it. Another
+huge drawback is that all the request are made one after the other. CouchDB is great in handling a lot of
+concurrent requests (see <a href="http://guide.couchdb.org/draft/why.html">Why CouchDB?</a>) so let&#8217;s not waste this feature.</p>
+
+<p>A second approach is making parallel requests and after each requests check if the others are already done.
+If they are done, continue with the code. The idea works like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">done</span> <span class="o">=</span> <span class="p">[];</span>
+</span><span class='line'><span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">1</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">done</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">done</span><span class="p">.</span><span class="nx">length</span> <span class="o">===</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">continue</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">2</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">done</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">done</span><span class="p">.</span><span class="nx">length</span> <span class="o">===</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">continue</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="mi">3</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">done</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">done</span><span class="p">.</span><span class="nx">length</span> <span class="o">===</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">continue</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="k">continue</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// do something with the data in done</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That isn&#8217;t pretty either because we have to check for <code>done</code> in each request. Therefore let&#8217;s use promises.</p>
+
+<h3>3. Wrapping query functions in promises</h3>
+
+<p>The defacto module for using promises is <a href="https://github.com/kriskowal/q">q</a> by Kris Kowal. The documentation
+is great and it is super easy to integrate as we will see now. Let&#8217;s write a promise for saving new documents
+to db</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">save</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">Q</span><span class="p">.</span><span class="nx">defer</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">nano</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">doc</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">err</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">deferred</span><span class="p">.</span><span class="nx">promise</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Another promise would be retrieving the sum of goals for each player</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">getScore</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerId</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">Q</span><span class="p">.</span><span class="nx">defer</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">nano</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;goals&#39;</span><span class="p">,</span> <span class="s1">&#39;byPlayer_sum&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="nx">playerId</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">err</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">body</span><span class="p">.</span><span class="nx">rows</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">body</span><span class="p">.</span><span class="nx">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">value</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">deferred</span><span class="p">.</span><span class="nx">promise</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can make use of these two functions as follows</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">myDoc</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>   <span class="s2">&quot;playerId&quot;</span><span class="o">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;goal&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">save</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">getScore</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">score</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">score</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above code almost reads like plain English. Save the new document to our db, then get the new score
+for player with <code>id=4</code> and then log the score. Awesome!</p>
+
+<p>We ended the second section with the problem of making multiple asyncronuous HTTP requests at the
+ same time and deal with the values they each return. We already implemented the <code>getScore</code> function
+  as a promise and used it in series with <code>then</code>. Using the same function more than once in parallel is
+  almost as easy.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/match&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">Q</span><span class="p">.</span><span class="nx">all</span><span class="p">([</span>
+</span><span class='line'>    <span class="nx">getScore</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nx">getScore</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nx">getScore</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nx">getScore</span><span class="p">(</span><span class="s2">&quot;4&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">]).</span><span class="nx">spread</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">pOne</span><span class="p">,</span> <span class="nx">pTwo</span><span class="p">,</span> <span class="nx">pThree</span><span class="p">,</span> <span class="nx">pFour</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;match&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;The match&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">john</span><span class="o">:</span> <span class="nx">pOne</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">jack</span><span class="o">:</span> <span class="nx">pTwo</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">chris</span><span class="o">:</span> <span class="nx">pThree</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">nick</span><span class="o">:</span> <span class="nx">pFour</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>Q.all</code> turns an array of promises into a single promise. <code>Spread</code> does what it&#8217;s named after
+ and spreads the values over the arguments of our fulfillment handling function. That means
+  <code>pOne</code> corresponds to the returned value of <code>getScore("1")</code>, <code>pTwo</code> to <code>getScore("2")</code> and so
+  on. This makes it very easy to perform multiple asynchronuous HTTP request and continue as
+soon as they are all done.</p>
+
+<p>Here is a screenshot of a sample app I built to demonstrate all the principles I&#8217;ve talked about.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/couchdb-promises-nano.png" title="Express app for analyzing soccer players" ></p>
+
+<h3>Conclusion</h3>
+
+<p>CouchDB with Node.js, nano and q is a powerful combination. Huge web applications
+ can be written while keeping a testable and maintainable structure. To learn more about promises
+ I recommend watching the excellent talk by Alex McPherson <a href="http://www.youtube.com/watch?v=juRtEEsHI9E">I .promise() to show you .when() to use Deferreds</a>.
+ In this post I didn&#8217;t talk about <a href="https://github.com/kriskowal/q#handling-errors">error handling</a> when using promises. That would have been too much,
+ but make sure you always handle errors, as they might crash your whole application.</p>
+
+<p>So start using promises today and
+ follow the <a href="http://blog.izs.me/post/48281998870/unix-philosophy-and-node-js">unix philosophy</a>:</p>
+
+<blockquote><p>Write programs that do one thing and do it well.</p></blockquote>
+
+<p>As always you can find the whole code with a working Express sample application at GitHub <a href=""></a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to pass JavaScript variables from a server to Angular.js]]></title>
