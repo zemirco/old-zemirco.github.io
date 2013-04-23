@@ -340,4 +340,4 @@ So start using promises today and
 
 > Write programs that do one thing and do it well.
 
-As always you can find the whole code with a working Express sample application at GitHub []().
+As always you can find the whole code with a working Express sample application at GitHub [couchdb-promises](https://github.com/zeMirco/zemirco.github.io/tree/source/code-examples/couchdb-promises).
