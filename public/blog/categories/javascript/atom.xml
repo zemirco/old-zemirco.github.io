@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: JavaScript | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/blog/categories/javascript/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-04-29T19:32:49+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[How to pass JavaScript variables from a server to Angular.js]]></title>
+    <link href="http://mircozeiss.com/how-to-pass-javascript-variables-from-a-server-to-angular/"/>
+    <updated>2013-04-13T00:00:00+02:00</updated>
+    <id>http://mircozeiss.com/how-to-pass-javascript-variables-from-a-server-to-angular</id>
+    <content type="html"><![CDATA[<p>I came across the problem of sending JavaScript variables from my backend,
+in this case an <a href="http://expressjs.com/">Express.js</a> server,
+to my frontend, means an <a href="http://angularjs.org/">Angular.js</a> controller. I'm using <a href="http://jade-lang.com/">Jade</a> as my template engine but the
+presented solutions should work with others, too.</p>
+
+<p>Basically you've got three options for doing this:</p>
+
+<ol>
+<li>Put the variable into the view file inside a <code>script</code> tag</li>
+<li>Make an HTTP request from Angular and serve the data as JSON from the
+backend</li>
+<li>Be smart and use <code>ng-init</code></li>
+</ol>
+
+
+<p>At the end of the article you find a link to a GitHub repo containing working
+examples for all the presented solutions. To play with the code fork and
+modify it according to your needs or start from scratch and add code while
+reading on. So, let's start.</p>
+
+<p>First create an empty directory, use <code>express</code> command to create all necessary files and run
+<code>npm install</code> to download additional modules. At the end start your server with <code>node app.js</code>.</p>
+
+<p><code>bash
+mkdir express-to-ngcontroller
+cd express-to-ngcontroller
+express
+npm install
+node app.js
+</code></p>
+
+<p>Afterwards you should see the message</p>
+
+<p><code>bash
+Express server listening on port 3000
+</code></p>
+
+<p>So far we've just set up our backend. Now it's time to add some Angular code to your <code>layout.jade</code>.</p>
+
+<p>```
+doctype 5
+html(ng-app)
+  head</p>
+
+<pre><code>title= title
+link(rel='stylesheet', href='http://mircozeiss.com/stylesheets/style.css')
+script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js")
+script(src="/javascripts/controller.js")
+</code></pre>
+
+<p>  body</p>
+
+<pre><code>a(href="/solution-one") solution one
+span -
+a(href="/solution-two") solution two
+span -
+a(href="/solution-three") solution three
+block content
+</code></pre>
+
+<p>```</p>
+
+<p>Let's have a look at the above code. Activate Angular for the whole page by
+adding <code>ng-app</code> as an attribute to the <code>html</code> tag. Load <code>angular.min.js</code> from
+ Google CDN and <code>controller.js</code> from file. Inside the body I created a basic
+ menu to navigate from one
+solution to the other.</p>
+
+<p>Last but not least create some dummy data at the server. In production this
+data is loaded from a database, but in this example I want to keep everything
+ nice and simple. Copy the following code to your <code>app.js</code>.</p>
+
+<p>```js
+var users = {
+  1: {</p>
+
+<pre><code>name: 'john',
+email: 'john@email.com'
+</code></pre>
+
+<p>  },
+  2: {</p>
+
+<pre><code>name: 'peter',
+email: 'peter@email.com'
+</code></pre>
+
+<p>  },
+  3: {</p>
+
+<pre><code>name: 'max',
+email: 'max@email.com'
+</code></pre>
+
+<p>  }
+};
+```</p>
+
+<p>Now everything should be set up and we can start tinkering with the different
+ solutions.</p>
+
+<h3>1. Put variable inside view file</h3>
+
+<p>Inside your <code>app.js</code> file create an additional route for <code>GET /solution-one</code></p>
+
+<p>```javascript
+app.get('/solution-one', function(req, res) {
+  res.render('solutionOne', {</p>
+
+<pre><code>title: 'Express and Angular marriage',
+users: users
+</code></pre>
+
+<p>  })
+});
+```</p>
+
+<p>We pass our <code>users</code> object to the view as a local variable named
+<code>users</code>. Running this code would throw an error as we haven't created the view
+<code>solutionOne.jade</code> yet. Create this file inside the <code>views/</code> directory and
+put the following code inside</p>
+
+<p></p>
+
+<p>```
+extends layout</p>
+
+<p>block content
+  div(ng-controller="UserCtrl")</p>
+
+<pre><code>h1= title
+p Welcome to #{title}
+ul
+  li(ng-repeat="user in users") {{ user.name }} - {{user.email}}
+</code></pre>
+
+<p>  script</p>
+
+<pre><code>var users = !{JSON.stringify(users)}
+</code></pre>
+
+<p>```
+</p>
+
+<p>With <code>ng-controller="UserCtrl"</code> we tell Angular which controller we'd like
+ to use for all the DOM children of this element. At the bottom of the file
+ we've put some extra JavaScript with a global variable called <code>users</code> that
+ loads the contents from the local variable <code>users</code> passed to the view.
+ Notice that we have to use <code>!{}</code> instead of <code>#{}</code>, which is usually used in
+ Jade for interpolation. However <code>#{}</code> escapes HTML code and would create
+ something like this</p>
+
+<p><code>js
+var users = {&amp;quot;1&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;john&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;john@email.com&amp;quot;},&amp;quot;2&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;peter&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;peter@email.com&amp;quot;},&amp;quot;3&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;max&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;max@email.com&amp;quot;}}
+</code></p>
+
+<p>That's not what we want. We want a nicely formatted String representation of
+our JSON object. That's why we need <code>!{}</code>.</p>
+
+<p>Then we need to load the content of this variable into our Angular scope.
+This is necessary for the <code>ng-repeat</code> directive as it doesn't work with
+variables, which are outside of the Angular scope. Open <code>controller.js</code> and
+ put the following code inside.</p>
+
+<p><code>js
+function UserCtrl($scope) {
+  $scope.users = users;
+}
+</code></p>
+
+<p>Start the server with <code>node app.js</code> and navigate to <code>/solution-one</code>. You
+should see a list with our three users where each list item contains the
+<code>name</code> and <code>email</code>. Nice, solution one works but let's have a look at the
+pros and cons.</p>
+
+<h4>Pro</h4>
+
+<p>Solution one is probably the easiest to understand and fastest to implement.
+Every step is comprehensible and nothing fancy is going on.</p>
+
+<h4>Contra</h4>
+
+<p>Using global variables in JavaScript is a No-Go. However in this case it is
+not that bad as the content of the global variable <code>users</code> is loaded into
+scope at page load. Manipulating <code>users</code> afterwards doesn't have any effects
+on the scope and our frontend.</p>
+
+<p>Still it is not the best solution. Let's look at another one.</p>
+
+<h3>2. HTTP request from Angular to a JSON API</h3>
+
+<p>Inside <code>app.js</code> create another route for <code>GET /solution-two</code></p>
+
+<p>```js
+app.get('/solution-two', function(req, res) {
+  res.render('solutionTwo', {</p>
+
+<pre><code>title: 'Express and Angular marriage'
+</code></pre>
+
+<p>  })
+});
+```</p>
+
+<p>and create the view <code>solutionTwo.jade</code> inside the <code>views/</code> folder with the
+following content</p>
+
+<p></p>
+
+<p>```
+extends layout</p>
+
+<p>block content
+  div(ng-controller="UserTwoCtrl")</p>
+
+<pre><code>h1= title
+p Welcome to #{title}
+ul
+  li(ng-repeat="user in users") {{user.name}} - {{user.email}}
+</code></pre>
+
+<p>```</p>
+
+<p></p>
+
+<p>You might have noticed that we haven't passed any data as local variables
+from our Express backend to the view. When you start the server and navigate
+with your browser to <code>/solution-one</code> you won't see any users listed. We did
+add another controller <code>UserTwoCtrl</code> to our view and we will add some
+functionality now.</p>
+
+<p>```js
+function UserTwoCtrl($scope, $http) {
+  $http.get('/solution-two/data').success(function(data) {</p>
+
+<pre><code>$scope.users = data
+</code></pre>
+
+<p>  })
+}
+```</p>
+
+<p>As soon as the controller is initiated by Angular it automatically makes a
+ GET request to <code>/solution-two/data</code> and assigns the fetched data to <code>$scope.users</code>.
+ Now refresh the page and see what happened. You should see an
+ error saying</p>
+
+<p><code>
+Failed to load resource: the server responded with a status of 404 (Not Found)
+</code></p>
+
+<p>Your terminal running the server should log</p>
+
+<p><code>
+GET /solution-two/data 404
+</code></p>
+
+<p>It simply means that we haven't implemented the route <code>GET
+/solution-two/data</code> yet. So let's do this by adding the following code to the
+ <code>app.js</code> file</p>
+
+<p><code>js
+app.get('/solution-two/data', function(req, res) {
+  res.json(users);
+});
+</code></p>
+
+<p>Restart the server and with your browser go to <code>/solution-two/data</code>. You
+should see our <code>users</code> object as JSON. Now go to <code>/solution-two</code> and, voila,
+everything works as expected. Three list items are created each showing name
+and email. The screenshot shows the extra request as the last action.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/angular-extra-http-request.png" title="Angular HTTP request fetching JSON data" ></p>
+
+<h4>Pro</h4>
+
+<p>Making HTTP request in order to get JSON data is common these days.
+Every major web service offers some kind of API to allow third party access.
+In theses cases, where you don't have the necessary data on your own server,
+it is the best solution to make an HTTP request from your frontend. You
+could, of course, make the request from the server, get the data and send it
+to the client as shown in solution one. This, however,
+adds unnecessary overhead to our server and by calling the API from the
+client we can save valuable resources.</p>
+
+<h4>Contra</h4>
+
+<p>The second solution needs the most additional code and also an extra route
+from which the data is served as JSON. This can get a bit messy because you
+basically have to serve every route twice. Once for the view and once for the
+data. Therefore it is still not the perfect solution, which leads us to our last
+method.</p>
+
+<h3>3. Be smart and use ng-init</h3>
+
+<p>The third and probably best solution makes use of the <a href="http://docs-angularjs-org-dev.appspot.com/api/ng.directive:ngInit">ngInit</a> directive.</p>
+
+<blockquote><p>The ngInit directive specifies initialization tasks to be executed before
+the template enters execution mode during bootstrap.</p></blockquote>
+
+<p>What does that mean?</p>
+
+<p>Short answer: The expression (variable + content) given to ngInit is loaded
+into scope and made available under this name.</p>
+
+<p>Let's have a look at the example from the Angular docs</p>
+
+<p></p>
+
+<p>```html
+&lt;!doctype html>
+<html ng-app>
+  <head></p>
+
+<pre><code>&lt;script src="http://code.angularjs.org/angular-1.0.2.min.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;div ng-init="greeting='Hello'; person='World'"&gt;
+  {{greeting}} {{person}}!
+&lt;/div&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p></p>
+
+<p>The variable <code>$scope.greeting</code> holds the String <code>'Hello'</code> and <code>$scope.person='World'</code>. Both are available inside the scope although not explicitly
+ specified inside a controller.</p>
+
+<p>We could rewrite and simplify the example like this</p>
+
+<p><code>js
+function MyCtrl($scope) {
+  $scope.greeting = 'Hello';
+  $scope.person = 'World'
+}
+</code></p>
+
+<p>and</p>
+
+<p></p>
+
+<p>```html
+&lt;!doctype html>
+<html ng-app>
+  <head></p>
+
+<pre><code>&lt;script src="http://code.angularjs.org/angular-1.0.2.min.js"&gt;&lt;/script&gt;
+&lt;script src="http://mircozeiss.com/javascripts/controller.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;div ng-controller="MyCtrl"&gt;
+  {{greeting}} {{person}}!
+&lt;/div&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p></p>
+
+<p>So let's combine this approach and our initial problem. First,
+add a new route <code>GET /solution-three</code> to <code>app.js</code> and create the
+corresponding view <code>solutionThree.jade</code>:</p>
+
+<p>```js
+app.get('/solution-three', function(req, res) {
+  res.render('solutionThree', {</p>
+
+<pre><code>title: 'Express and Angular marriage',
+users: users
+</code></pre>
+
+<p>  })
+});
+```</p>
+
+<p></p>
+
+<p>```
+extends layout</p>
+
+<p>block content
+  div(ng-controller="UserThreeCtrl", ng-init="users= #{JSON.stringify(users)}")</p>
+
+<pre><code>h1= title
+p Welcome to #{title}
+ul
+  li(ng-repeat="user in users") {{user.name}} - {{user.email}}
+</code></pre>
+
+<p>```</p>
+
+<p></p>
+
+<p>As you can see we pass our <code>users</code> variable to the Jade template as a local
+variable. Inside the template we convert the JSON object to its String
+representation and assign it to the Angular variable <code>users</code>. Later on we
+have access to this variable and use a regular <code>ngRepeat</code> directive to create
+ the list of users. Start the server, navigate to <code>/solution-three</code> and
+ you should the expected list of users.</p>
+
+<h4>Pro</h4>
+
+<p>It is the cleanest solution. We don't have to use global variables and we
+don't have to make an extra HTTP request. It is also the solution that needs
+the least amount of code.</p>
+
+<h4>Contra</h4>
+
+<p>The concept behind <code>ngInit</code> might be a bit confusing at the beginning. For
+further insights and to understand how Angular actually renders a page I
+recommend reading <a href="http://docs.angularjs.org/guide/bootstrap">Bootstrap</a> (not
+ related to <a href="http://twitter.github.io/bootstrap/">Twitter's Bootstrap</a>) and
+ <a href="http://docs.angularjs.org/guide/compiler">HTML Compiler</a>.</p>
+
+<h3>Conclusion</h3>
+
+<p>You've learned that several solutions exist for passing data from your backend to an Angular
+controller. While solution one being the worst it depends on your architecture and your requirements
+whether solution two or three fits better. I personally tend to use the last solution as I have to make
+one less request to the server.</p>
+
+<p>As promised at the beginning you can find the working example at GitHub under
+ <a href="https://github.com/zeMirco/zemirco.github.io/tree/source/code-examples/server-vars-ngcontroller">server-vars-ngcontroller</a>.</p>
+
+<p><strong>Pro Tip</strong>: Don't mix Jade's <code>for user in users</code> and <code>ng-repeat="user in users"</code>
+ from Angular. I did that once at the beginning and was totally frustrated
+ because nothing worked as expected. You can image my feelings when I found
+ that mistake. Well, it was late that night!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Blog Init]]></title>
+    <link href="http://mircozeiss.com/blog-init/"/>
+    <updated>2013-04-12T00:00:00+02:00</updated>
+    <id>http://mircozeiss.com/blog-init</id>
+    <content type="html"><![CDATA[<p>I've been playing with the idea for some time and today I finally start my own blog.</p>
+
+<p>You'll read about JavaScript, web technologies and solutions I came across developing web applications.</p>
+
+<p> The blog is powered by <a href="http://octopress.org/">Octopress</a> and
+ hosted on <a href="http://pages.github.com/">GitHub pages</a>. You can find the repo at
+ <a href="https://github.com/zeMirco/zemirco.github.io">zemirco.github.io</a>. I got the domain
+ <a href="http://www.mircozeiss.com">mircozeiss.com</a> from <a href="http://www.hetzner.de/en/">Hetzner</a> and, being
+ a developer and not a designer, I'm very thankful for <a href="http://lucaslew.com/">Lucas Lew</a> who
+ created the <a href="https://github.com/lucaslew/whitespace">whitespace</a> theme.</p>
+
+<p>If you've got some ideas for improvements send me an email to
+<a href="mailto:mirco.zeiss@gmail.com">mirco.zeiss@gmail.com</a> or write something below.</p>
+]]></content>
+  </entry>
+  
+</feed>

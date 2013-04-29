@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: CouchDB | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/blog/categories/couchdb/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-04-29T19:32:49+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Async CouchDB queries with nano and promises]]></title>
+    <link href="http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/"/>
+    <updated>2013-04-21T00:00:00+02:00</updated>
+    <id>http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises</id>
+    <content type="html"><![CDATA[<p>This post is about CouchDB and its <code>MapReduce</code> functionality. I'll use simple <code>reduce</code>
+functions to gather some statistics about soccer players. <a href="https://github.com/dscape/nano">Nano</a>
+is used the query the database from
+Node.js. To keep our code nice and tidy we'll make use of <a href="https://github.com/promises-aplus/promises-spec">Promises</a>
+through the <a href="https://github.com/kriskowal/q">q</a> module.</p>
+
+<h3>1. CouchDB architecture</h3>
+
+<p>Assuming we want to record every goal in a match and create some statistics to see who
+ scored the most goals. Each goal is a single document in our CouchDB database</p>
+
+<p><code>js
+{
+   "_id": "ee2459df977d62d196872dd0ae63ea13",
+   "_rev": "1-e00b4c6130d022e7336cdafacd18f93a",
+   "playerId": "4",
+   "type": "goal"
+}
+</code></p>
+
+<p>The <code>type</code> key simply helps to differentiate between other documents (could be players with
+name, age, price, etc.) and our <code>goal</code> documents.</p>
+
+<p>With a simple <code>map</code> function we get every goal by player</p>
+
+<p>```js
+function(doc) {
+  if (doc.type === 'goal') {</p>
+
+<pre><code>emit(doc.playerId, 1)
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>The result of the <code>map</code> function looks similar to the following table</p>
+
+<table class="table table-striped table-hover table-condensed table-bordered">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“4”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“4”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“3”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“2”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>The <strong>key</strong> represents the <code>playerId</code> and the <strong>value</strong> is <code>1</code> for every key. We need this
+<strong>value</strong>
+later on to calculate the total amout of goals scored by each player.</p>
+
+<p>To get this total amout of goals we simply have to sum up all <strong>values</strong> per player. Therefore our <code>reduce</code>
+function looks like this</p>
+
+<p><code>js
+_sum
+</code></p>
+
+<p><code>_sum</code> is a built in <code>reduce</code> function provided by CouchDB. More native functions can be found in the
+<a href="http://wiki.apache.org/couchdb/Built-In_Reduce_Functions">CouchDB Wiki</a>. The result of the above function looks like this</p>
+
+<table class="table table-striped table-hover table-condensed table-bordered">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“4”</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>“3”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“2”</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>“1”</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>That's exactly what we wanted. We can now query our view and pass the playerId as <strong>key</strong> to get the final value.</p>
+
+<h3>2. Using the database with nano</h3>
+
+<p>Several modules exist on <a href="https://npmjs.org/search?q=couchdb">npm</a> to interact with CouchDB. The most popular ones are
+probably</p>
+
+<ul>
+<li><a href="https://github.com/dscape/nano">nano</a> and</li>
+<li><a href="https://github.com/cloudhead/cradle">cradle</a></li>
+</ul>
+
+
+<p>In this post I'll use nano. I haven't used cradle yet but I'm sure it offers similar functionality.</p>
+
+<p>To save new documents to our db we use the <code>insert</code> function</p>
+
+<p>```js
+var id = "1";</p>
+
+<p>var doc = {
+  playerId: id
+};</p>
+
+<p>nano.insert(doc, function(err, body) {
+  if (err) console.log(err);
+  console.log('done');
+});
+```</p>
+
+<p>The total amout of goals scored by each player is provided by the above created <code>MapReduce</code> function. We
+can query this view using nano's <code>view</code> function</p>
+
+<p>```js
+nano.view('goals', 'byPlayer_sum', {key: playerId}, function(err, body) {
+  if (err) console.log(err);
+  if (!body.rows.length) {</p>
+
+<pre><code>// no goals for this player
+console.log(0);
+</code></pre>
+
+<p>  } else {</p>
+
+<pre><code>console.log(body.rows[0].value);
+</code></pre>
+
+<p>  }
+});
+```</p>
+
+<p>This gives us the sum for each player that we pass to CouchDB as a parameter <code>{key: playerId}</code>.</p>
+
+<p>So, now we can store new documents and retrieve the sum via nano from our db. The problem is loading
+multiple sums for different players at the same time and then display the results to our users. The easiest solution
+is using a series of callback functions</p>
+
+<p>```js
+nano.view('goals', 'byPlayer_sum', {key: 1}, function(err, bodyOne) {
+  nano.view('goals', 'byPlayer_sum', {key: 2}, function(err, bodyTwo) {</p>
+
+<pre><code> nano.view('goals', 'byPlayer_sum', {key: 3}, function(err, bodyThree) {
+   nano.view('goals', 'byPlayer_sum', {key: 4}, function(err, bodyFour) {
+     ...
+   });
+ });
+</code></pre>
+
+<p>  });
+});
+```</p>
+
+<p>That approach leads to the famous spaghetti code/callback hell/pyramide/christmas tree/you name it. Another
+huge drawback is that all the request are made one after the other. CouchDB is great in handling a lot of
+concurrent requests (see <a href="http://guide.couchdb.org/draft/why.html">Why CouchDB?</a>) so let's not waste this feature.</p>
+
+<p>A second approach is making parallel requests and after each requests check if the others are already done.
+If they are done, continue with the code. The idea works like this</p>
+
+<p>```js
+var done = [];
+nano.view('goals', 'byPlayer_sum', {key: 1}, function(err, body) {
+  done.push(body);
+  if(done.length === 3) {</p>
+
+<pre><code>continue();
+</code></pre>
+
+<p>  }
+});</p>
+
+<p>nano.view('goals', 'byPlayer_sum', {key: 2}, function(err, body) {
+  done.push(body);
+  if(done.length === 3) {</p>
+
+<pre><code>continue();
+</code></pre>
+
+<p>  }
+});</p>
+
+<p>nano.view('goals', 'byPlayer_sum', {key: 3}, function(err, body) {
+  done.push(body);
+  if(done.length === 3) {</p>
+
+<pre><code>continue();
+</code></pre>
+
+<p>  }
+});</p>
+
+<p>var continue = function() {
+  // do something with the data in done
+}
+```</p>
+
+<p>That isn't pretty either because we have to check for <code>done</code> in each request. Therefore let's use promises.</p>
+
+<h3>3. Wrapping query functions in promises</h3>
+
+<p>The defacto module for using promises is <a href="https://github.com/kriskowal/q">q</a> by Kris Kowal. The documentation
+is great and it is super easy to integrate as we will see now. Let's write a promise for saving new documents
+to db</p>
+
+<p>```js
+var save = function(doc) {
+  var deferred = Q.defer();</p>
+
+<p>  nano.insert(doc, function(err, body) {</p>
+
+<pre><code>if (err) {
+  deferred.reject(new Error(err));
+} else {
+  deferred.resolve(body);
+}
+</code></pre>
+
+<p>  })</p>
+
+<p>  return deferred.promise;
+}</p>
+
+<p>```</p>
+
+<p>Another promise would be retrieving the sum of goals for each player</p>
+
+<p>```js
+var getScore = function(playerId) {</p>
+
+<p>  var deferred = Q.defer();</p>
+
+<p>  nano.view('goals', 'byPlayer_sum', {key: playerId}, function(err, body) {</p>
+
+<pre><code>if (err) {
+  deferred.reject(new Error(err));
+} else {
+  if (!body.rows.length) {
+    deferred.resolve(0);
+  } else {
+    deferred.resolve(body.rows[0].value);
+  }
+}
+</code></pre>
+
+<p>  });</p>
+
+<p>  return deferred.promise;</p>
+
+<p>};
+```</p>
+
+<p>We can make use of these two functions as follows</p>
+
+<p>```js
+var doc = {
+   "playerId": "4",
+   "type": "goal"
+};</p>
+
+<p>save(doc)
+  .then(function(body) {</p>
+
+<pre><code>return getScore(4)
+</code></pre>
+
+<p>  }).then(function(score) {</p>
+
+<pre><code>console.log(score);
+</code></pre>
+
+<p>  });
+```</p>
+
+<p>The above code almost reads like plain English. Save the new document to our db, then get the new score
+for player with <code>id=4</code> and then log the score. Awesome!</p>
+
+<p>We ended the second section with the problem of making multiple asyncronuous HTTP requests at the
+ same time and deal with the values they each return. We already implemented the <code>getScore</code> function
+  as a promise and used it in series with <code>then</code>. Using the same function more than once in parallel is
+  almost as easy.</p>
+
+<p>```js
+app.get('/match', function(req, res) {</p>
+
+<p>  Q.all([</p>
+
+<pre><code>getScore("1"),
+getScore("2"),
+getScore("3"),
+getScore("4")
+</code></pre>
+
+<p>  ]).spread(function(pOne, pTwo, pThree, pFour) {</p>
+
+<pre><code>  res.render('match', {
+    title: 'The match',
+    john: pOne,
+    jack: pTwo,
+    chris: pThree,
+    nick: pFour
+  })
+})
+</code></pre>
+
+<p>});
+```</p>
+
+<p><code>Q.all</code> turns an array of promises into a single promise. <code>Spread</code> does what it's named after
+ and spreads the values over the arguments of our fulfillment handling function. That means
+  <code>pOne</code> corresponds to the returned value of <code>getScore("1")</code>, <code>pTwo</code> to <code>getScore("2")</code> and so
+  on. This makes it very easy to perform multiple asynchronuous HTTP request and continue as
+soon as they are all done.</p>
+
+<p>Here is a screenshot of a sample app I built to demonstrate all the principles I've talked about.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/couchdb-promises-nano.png" title="Express app for analyzing soccer players" ></p>
+
+<h3>Conclusion</h3>
+
+<p>CouchDB with Node.js, nano and q is a powerful combination. Huge web applications
+ can be written while keeping a testable and maintainable structure. To learn more about promises
+ I recommend watching the excellent talk by Alex McPherson <a href="http://www.youtube.com/watch?v=juRtEEsHI9E">I .promise() to show you .when() to use Deferreds</a>.
+ In this post I didn't talk about <a href="https://github.com/kriskowal/q#handling-errors">error handling</a> when using promises. That would have been too much,
+ but make sure you always handle errors, as they might crash your whole application.</p>
+
+<p>So start using promises today and
+ follow the <a href="http://blog.izs.me/post/48281998870/unix-philosophy-and-node-js">unix philosophy</a>:</p>
+
+<blockquote><p>Write programs that do one thing and do it well.</p></blockquote>
+
+<p>As always you can find the whole code with a working Express sample application at GitHub <a href="https://github.com/zeMirco/zemirco.github.io/tree/source/code-examples/couchdb-promises">couchdb-promises</a>.</p>
+]]></content>
+  </entry>
+  
+</feed>
