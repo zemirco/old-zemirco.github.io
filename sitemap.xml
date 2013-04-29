@@ -2,17 +2,17 @@
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
         <loc>http://mircozeiss.com/blog-init/</loc>
-        <lastmod>2013-04-15T18:31:47+02:00</lastmod>
+        <lastmod>2013-04-29T19:28:38+02:00</lastmod>
     </url>
     <url>
         <loc>
             http://mircozeiss.com/how-to-pass-javascript-variables-from-a-server-to-angular/
         </loc>
-        <lastmod>2013-04-21T17:48:45+02:00</lastmod>
+        <lastmod>2013-04-29T19:29:10+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/</loc>
-        <lastmod>2013-04-23T18:45:23+02:00</lastmod>
+        <lastmod>2013-04-29T19:29:54+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/about.html</loc>
@@ -20,11 +20,11 @@
     </url>
     <url>
         <loc>http://mircozeiss.com/blog/archives/</loc>
-        <lastmod>2013-04-23T18:45:23+02:00</lastmod>
+        <lastmod>2013-04-29T19:29:54+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/</loc>
-        <lastmod>2013-04-23T18:45:23+02:00</lastmod>
+        <lastmod>2013-04-29T19:29:54+02:00</lastmod>
     </url>
     <url>
         <loc>http://mircozeiss.com/robots.txt</loc>
