@@ -2,7 +2,7 @@
 layout: post
 title: "Blog Init"
 comments: true
-categories:
+categories: [blog, JavaScript, Octopress, GitHub]
 ---
 
 I've been playing with the idea for some time and today I finally start my own blog.

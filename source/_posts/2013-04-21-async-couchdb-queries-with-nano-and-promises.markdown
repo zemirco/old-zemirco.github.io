@@ -2,7 +2,7 @@
 layout: post
 title: "Async CouchDB queries with nano and promises"
 comments: true
-categories:
+categories: [CouchDB, Promises, nano, MapReduce]
 ---
 
 This post is about CouchDB and its `MapReduce` functionality. I'll use simple `reduce`

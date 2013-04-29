@@ -2,7 +2,7 @@
 layout: post
 title: "How to pass JavaScript variables from a server to Angular.js"
 comments: true
-categories:
+categories: [JavaScript, Angular.js, Express.js, Jade]
 ---
 
 I came across the problem of sending JavaScript variables from my backend,
