@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: blog | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/categories/blog/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-04-30T19:10:05+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Blog Init]]></title>
+    <link href="http://mircozeiss.com/blog-init/"/>
+    <updated>2013-04-12T00:00:00+02:00</updated>
+    <id>http://mircozeiss.com/blog-init</id>
+    <content type="html"><![CDATA[<p>I've been playing with the idea for some time and today I finally start my own blog.</p>
+
+<p>You'll read about JavaScript, web technologies and solutions I came across developing web applications.</p>
+
+<p> The blog is powered by <a href="http://octopress.org/">Octopress</a> and
+ hosted on <a href="http://pages.github.com/">GitHub pages</a>. You can find the repo at
+ <a href="https://github.com/zeMirco/zemirco.github.io">zemirco.github.io</a>. I got the domain
+ <a href="http://www.mircozeiss.com">mircozeiss.com</a> from <a href="http://www.hetzner.de/en/">Hetzner</a> and, being
+ a developer and not a designer, I'm very thankful for <a href="http://lucaslew.com/">Lucas Lew</a> who
+ created the <a href="https://github.com/lucaslew/whitespace">whitespace</a> theme.</p>
+
+<p>If you've got some ideas for improvements send me an email to
+<a href="mailto:mirco.zeiss@gmail.com">mirco.zeiss@gmail.com</a> or write something below.</p>
+]]></content>
+  </entry>
+  
+</feed>
