@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Express.js | Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/categories/express-dot-js/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-04-30T19:10:05+02:00</updated>
+  <updated>2013-05-04T18:56:55+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,400 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Mozilla Persona example app with Express and CouchDB]]></title>
+    <link href="http://mircozeiss.com/mozilla-persona-example-app-with-express-and-couchdb/"/>
+    <updated>2013-05-03T20:25:00+02:00</updated>
+    <id>http://mircozeiss.com/mozilla-persona-example-app-with-express-and-couchdb</id>
+    <content type="html"><![CDATA[<p><a href="https://developer.mozilla.org/en-US/docs/Persona">Mozilla Persona</a> gained a lot of attention recently.
+The developers have released <a href="http://identity.mozilla.com/post/47541633049/persona-beta-2">Beta 2</a> at the
+beginning of last month and aim to bring Persona to <a href="https://blog.mozilla.org/beyond-the-code/2013/04/09/persona-beta2/">half of the worldwide Internet population</a> in the near future.</p>
+
+<p>Although Mozilla has a <a href="https://developer.mozilla.org/en-US/docs/Persona/Quick_Setup">quick setup guide</a> to demonstrate the basic implementation
+it is not as trivial to create a fully featured web app with <a href="http://www.adambarth.com/papers/2008/barth-jackson-mitchell-b.pdf">CSRF protection</a>,
+<a href="https://developer.mozilla.org/en-US/docs/Security/CSP">Content Security Policy</a> and database in the backend. That's why I wrote
+this simple example application to learn more about the system and help others to get started.</p>
+
+<p>The app is built on the following open source stack</p>
+
+<ul>
+<li><a href="http://couchdb.apache.org/">CouchDB</a> hosted at <a href="https://cloudant.com/">Cloudant</a></li>
+<li><a href="https://github.com/dscape/nano">nano</a></li>
+<li><a href="http://expressjs.com/">Express</a></li>
+<li><a href="https://github.com/mikeal/request">Request</a></li>
+<li><a href="http://jquery.com/">jQuery</a></li>
+<li><a href="http://twitter.github.io/bootstrap/">Bootstrap</a></li>
+</ul>
+
+
+<p>To see the demo visit <a href="http://mysterious-coast-9759.herokuapp.com/">mysterious-coast-9759.herokuapp.com</a>. The code is available at
+GitHub <a href="https://github.com/zeMirco/mozilla-persona-express-couchdb/">mozilla-persona-express-couchdb</a>.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/mozilla-persona-example.png" title="Mozilla Persona example app with Express and CouchDB" ></p>
+
+<h3>Related projects</h3>
+
+<p>Several other examples already exist. Take a look at</p>
+
+<ul>
+<li><a href="https://github.com/mozilla/123done">123done</a></li>
+<li><a href="https://github.com/lloyd/node.js-persona-example">node.js-persona-example</a></li>
+<li><a href="https://github.com/lloyd/myfavoritebeer.org">myfavoritebeer.org</a></li>
+<li><a href="https://github.com/mozilla/browserid-cookbook/tree/master/node-express">browserid-cookbook</a></li>
+</ul>
+
+
+<p>They were the foundation and inspiration for my own project. Without them I couldn't have done it. Therefore, thanks to the authors!
+Especially to <a href="http://lloyd.io/">Lloyd Hilaiel</a>, <a href="http://fmarier.org/">Francois Marier</a> and <a href="https://shanetomlinson.com/">Shane Tomlinson</a>.</p>
+
+<p>However, all of the examples were missing some features I'd like to see. These are</p>
+
+<ul>
+<li>proper DB implementation</li>
+<li>CSRF protection</li>
+<li>Content Security Policy (CSP)</li>
+<li>cookie for <code>loggedInUser</code> variable</li>
+<li>use of request module (imho makes code easier to read)</li>
+<li>simplicity</li>
+</ul>
+
+
+<p>So I tried to take the best parts from the above examples and throw them together in my own app.</p>
+
+<h3>Getting started</h3>
+
+<p>I won't cover the basic implementation. Read more about those steps in <a href="https://developer.mozilla.org/en-US/docs/Persona/Quick_Setup">quick setup</a>.
+I'd like to focus more on the advanced stuff.</p>
+
+<p>Let's start by implementing our database. We want to save our users identified by their email address and an additional property, which is the username.
+As we are using CouchDB a sample document looks like the following.</p>
+
+<p><code>js
+{
+   "_id": "mirco.zeiss@gmail.com",
+   "_rev": "31-a51c569f771348de72f06a0886b51ab0",
+   "username": "zeMirco"
+}
+</code></p>
+
+<p>Every time a user logs in with Persona <code>navigator.id.request()</code> is called and a <code>POST</code> request to <code>/auth/login</code> is made.</p>
+
+<p>```js
+onlogin: function(assertion) {
+  var token = $('#token').val();
+  $.post('/auth/login', {assertion: assertion, _csrf: token}, function(data) {</p>
+
+<pre><code>window.location.reload();
+</code></pre>
+
+<p>  });
+}
+```</p>
+
+<p>We'll get to the <code>token</code> and <code>_csrf</code> stuff later in this post. On the server the assertion is verified by posting it and the <code>audience</code> to Mozilla.
+As soon as we get a valid answer back we have to do the following:</p>
+
+<ol>
+<li>Check if the email is stored in our db</li>
+<li>If not create a new user with an empty <code>username</code> property and save him to the db</li>
+<li>If the email is already present in our db do nothing (we have a returning user)</li>
+</ol>
+
+
+<p>Unfortunately Persona doesn't tell us whether the user is a new or existing one. That's why we have to check for existence on every login. CouchDB provides a handy feature to check for document existence. Instead of making a full <code>GET</code> request with the email as <code>key</code>
+we can simply use a lightweight <code>HEAD</code> request. Read more about this trick at <a href="http://eclipsesource.com/blogs/2013/03/01/use-your-head-checking-couchdb-document-existence/">Use your head checking CouchDB document existence</a>.
+If we get back an error with status code <code>404</code> we have a new user. Therefore save him to db.</p>
+
+<p>```js
+db.head(email, function(err, body, header) {
+  if (err) console.log(err);
+  if (err &amp;&amp; err.status_code === 404) {</p>
+
+<pre><code>// email is not in db
+var doc = {
+  username: ''
+};
+db.insert(doc, email, function(err, body) {
+  if (err) console.log(err);
+  resp.send(200);
+})
+</code></pre>
+
+<p>  } else {</p>
+
+<pre><code>// email is already stored in db
+resp.send(200);
+</code></pre>
+
+<p>  }
+});
+```</p>
+
+<p>Sweet, we can now save our users to db and differentiate between new and existing ones. Problem is we somehow have to remember who is logged in and who isn't.
+We don't want ours users to make the login call on every request. Therefore we have to use <strong>sessions</strong>.</p>
+
+<h3>Cookie session</h3>
+
+<p>Express offers cookie based session support via the <a href="http://www.senchalabs.org/connect/">connect</a> <a href="http://www.senchalabs.org/connect/cookieSession.html">cookieSession</a> middleware.
+You could also use Mozilla's own implementation <a href="https://github.com/mozilla/node-client-sessions">node-client-sessions</a> or some key value stores like Redis.
+Read more about the pros and cons of cookies vs stores at <a href="https://hacks.mozilla.org/2012/12/using-secure-client-side-sessions-to-build-simple-and-scalable-node-js-applications-a-node-js-holiday-season-part-3/">Using secure client-side sessions to build simple and scalable Node.JS applications</a>.</p>
+
+<p>To enable cookie sessions in Express add the following middleware to your config.</p>
+
+<p><code>js
+// built in middleware
+app.use(express.cookieParser('your secret here'));
+app.use(express.cookieSession());
+</code></p>
+
+<p>You can now create sessions on login <code>req.session.email = email</code> and destroy them on logout <code>req.session = null</code>. Our users can also
+visit the <code>/profile</code> route which is protected and not accessible for users without any valid session.</p>
+
+<p>```js
+// middleware to restrict access to internal routes like /profile
+function restrict(req, res, next) {
+  if (req.session.email) {</p>
+
+<pre><code>next();
+</code></pre>
+
+<p>  } else {</p>
+
+<pre><code>res.redirect('/');
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>// use the middleware in your routes
+app.get('/profile', restrict, profile.get);
+```</p>
+
+<h3>Content Security Policy</h3>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Security/CSP">Content Security Policy</a> (simply said) tells the browser to use JavaScript (and images, style sheets, frames, etc.)
+only from your own domain while forbidding inline script and script from third party URLs. It adds another layer of security against XSS attacks.</p>
+
+<p><a href="https://github.com/evilpacket/helmet">Helmet</a> is a great middleware to set CSP headers in Express. It also offers several other layers of security.
+In my app I'll write the headers by hand as it only requires a few lines of code.</p>
+
+<p>Check for browser support and implementation at <a href="http://caniuse.com/#feat=contentsecuritypolicy">caniuse#contentsecuritypolicy</a>.
+Firefox and IE10 need the <code>X-Content-Security-Policy</code> header while Safari and Chrome need <code>X-WebKit-CSP</code>.</p>
+
+<p>```js
+var policy =  "default-src 'self';" +</p>
+
+<pre><code>          "frame-src 'self' https://login.persona.org;" +
+          "script-src 'self' 'unsafe-inline' https://login.persona.org;" +
+          "style-src 'self' 'unsafe-inline'";
+</code></pre>
+
+<p>app.use(function(req, res, next) {
+  // Firefox and Internet Explorer
+  res.header("X-Content-Security-Policy", policy);
+  // Safari and Chrome
+  res.header("X-WebKit-CSP", policy);
+  // continue with next middleware
+  next();
+});
+```</p>
+
+<p>In theory adding <code>'unsafe-inline'</code> shouldn't be necessary but I got errors in Chrome caused by jQuery. Maybe they are related to <a href="http://bugs.jquery.com/ticket/13507">jQuery bug #13507</a>.
+You can verify the headers in the browser's development tools.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/persona-csp.png" title="Content Security Policy Headers" ></p>
+
+<h3>CSRF protection</h3>
+
+<p>A great explanation for Cross-Site Request Forgery is the paper <a href="http://www.adambarth.com/papers/2008/barth-jackson-mitchell-b.pdf">Robust Defenses for Cross-Site Request Forgery</a>.
+Express provides a built in middleware <a href="http://www.senchalabs.org/connect/csrf.html">csrf</a> which makes the use of CSRF very easy.</p>
+
+<p>Our own custom middleware makes the <code>token</code> variable available to all our views and we can use it whenever we have to change the state on the server.</p>
+
+<p><code>js
+app.use(function(req, res, next) {
+  res.locals.token = req.session._csrf;
+  next();
+});
+</code></p>
+
+<p>That's usually done by adding a hidden input field to the forms.</p>
+
+<p><code>jade
+form#login.navbar-form.pull-right
+  input#token(type="hidden", name="_csrf", value=token)
+  button.btn(type="submit") Login
+</code></p>
+
+<p>The token is sent to the server and <code>app.use(express.csrf());</code> checks if it is equal to <code>req.session._csrf</code>. If it isn't Express throws a <code>403</code> error.
+We not only have to include the token in forms but also when we make ajax requests.</p>
+
+<p><code>js
+var token = $('#token').val();
+$.post('/auth/login', {assertion: assertion, _csrf: token}, function(data) {
+  window.location.reload();
+});
+</code></p>
+
+<p>That explains the additional <code>_csrf</code> key.</p>
+
+<h3>Sending <em>loggedInUser</em> from server to client JavaScript</h3>
+
+<p>The <a href="https://developer.mozilla.org/en-US/docs/DOM/navigator.id.watch"><code>navigator.id.watch</code></a> function requires the <code>loggedInUser</code> parameter,
+which tells Persona what you believe about the user's state.</p>
+
+<p><a href="https://github.com/mozilla/123done/blob/master/static/js/123done.js#L42-L44">123done</a> makes a GET request to <code>/api/auth_status</code> in order to get <code>loggedInUser</code></p>
+
+<p><code>js
+$.get('/api/auth_status', function(data) {
+  loggedInEmail = JSON.parse(data).logged_in_email;
+  ...
+});
+</code></p>
+
+<p>and the server responds with the current session.</p>
+
+<p>```js
+app.get('/api/auth_status', function(req, res) {
+  res.send(JSON.stringify({</p>
+
+<pre><code>logged_in_email: req.session.user || null,
+</code></pre>
+
+<p>  }));
+});
+```</p>
+
+<p><a href="https://github.com/lloyd/node.js-persona-example/blob/master/views/index.ejs#L15">node.js-persona-example</a> uses inline JavaScript
+and puts the variable via <a href="https://github.com/visionmedia/ejs">ejs</a> directly into the view.</p>
+
+<p><code>html
+navigator.id.watch({
+  loggedInUser: &lt;%- JSON.stringify(email) %&gt;,
+  ...
+})
+</code></p>
+
+<p>The server renders the view with the local variable <code>email</code> with holds the current session.</p>
+
+<p><code>js
+app.get('/', function(req, res) {
+  res.render('index.ejs', { email: req.session.email || null });
+});
+</code></p>
+
+<p><a href="https://github.com/lloyd/myfavoritebeer.org/blob/master/static/js/main.js#L135-L138">myfavoritebeer.org</a> also makes a GET request. This time to <code>/api/whoami</code>.</p>
+
+<p><code>js
+$.get('/api/whoami', function (res) {
+  if (res === null) loggedOut();
+  else loggedIn(res, true);
+}, 'json');
+</code></p>
+
+<p>The server responds with the email from the current session and the corresponding image from <a href="https://www.libravatar.org/">Libravatar</a>.</p>
+
+<p>```js
+app.get("/api/whoami", function (req, res) {
+  if (req.session &amp;&amp; typeof req.session.email === 'string') {</p>
+
+<pre><code>respondWithUserInfo(req, res);
+</code></pre>
+
+<p>  } else {</p>
+
+<pre><code>return res.json(null);
+</code></pre>
+
+<p>  }
+});</p>
+
+<p>function respondWithUserInfo(req, res) {
+  libravatar.url({email: req.session.email, size: 32, http: false},</p>
+
+<pre><code>function (error, avatar) {
+  if (error) {
+    return res.json({'email': req.session.email, 'avatar': ''});
+  }
+  return res.json({'email': req.session.email, 'avatar': avatar});
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Last but not least <a href="https://github.com/mozilla/browserid-cookbook/blob/master/node-express/views/layout.jade#L17-L22">browserid-cookbook</a>
+uses inline script (this time with Jade instead ejs) to pass the current user to the frontend.</p>
+
+<p>```jade
+if user
+  script</p>
+
+<pre><code>var loggedInUser = '#{user}';
+</code></pre>
+
+<p>else
+  script</p>
+
+<pre><code>var loggedInUser = null;
+</code></pre>
+
+<p>```</p>
+
+<p>The server sets the local variable <code>loggedInUser</code> from the current session.</p>
+
+<p>```js
+exports.index = function(req, resp){
+  resp.render('index', {</p>
+
+<pre><code>title: 'Express', 
+user: req.session.email, 
+csrf: req.session._csrf 
+</code></pre>
+
+<p>  })
+};
+```</p>
+
+<p>In summary two examples use inline script and two use extra GET requests. What's the better implementation?</p>
+
+<p>In my opinion both aren't perfect. Inline script is probably the easiest but worst solution, as it won't work with a strict Content Security Policy.
+An extra GET request costs time and you have to implement an additional route on your server. That's why I chose a third solution. I use cookies to send
+the current user from our backend to the frontend. Mozilla also recommends this way.</p>
+
+<blockquote><p>... you might examine the browser's cookies to determine who is signed in.</p></blockquote>
+
+<p>We can set the cookie via a custom middleware. If the user isn't logged in and doesn't have a valid session no cookie is needed.</p>
+
+<p>```js
+app.use(function(req, res, next) {
+  if (req.session.email) {</p>
+
+<pre><code>res.cookie('email', req.session.email);
+</code></pre>
+
+<p>  }
+  next();
+});
+```</p>
+
+<p>On the client we can read the cookie via the awesome <a href="https://github.com/carhartl/jquery-cookie">jquery-cookie</a> plugin.</p>
+
+<p><code>js
+var email = $.cookie('email') || null;
+</code></p>
+
+<p>Cookies have the advantage that they save the extra request to the server and don't require inline script.</p>
+
+<h3>Conclusion</h3>
+
+<p>A few more steps than just the quick setup are needed to build a full featured web app based on Mozilla Persona. However it isn't rocket science and I've learned a lot while developing this app.
+Persona is a great technology and admins will have less to worry about, as no passwords are stored in the db.</p>
+
+<p>I'm sure my example is far from being perfect so if you see any mistakes or find room for improvements please open an <a href="https://github.com/zeMirco/mozilla-persona-express-couchdb/issues">issue</a> at GitHub.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to pass JavaScript variables from a server to Angular.js]]></title>
