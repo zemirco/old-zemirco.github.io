@@ -9,9 +9,8 @@
   <meta name="author" content="Mirco Zeiss">
 
   
-  <meta name="description" content="Mozilla Persona gained a lot of attention recently.
-The developers have released Beta 2 at the
-beginning of last month and aim to bring Persona to &hellip;">
+  <meta name="description" content="Based on the feedback for my last post Mozilla Persona example app with Express and CouchDB
+I made some small but quite important changes in the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -40,9 +39,8 @@ beginning of last month and aim to bring Persona to &hellip;">
   <meta name="twitter:creator" content="zeMirco">
   <meta name="twitter:url" content="http://mircozeiss.com">
   <meta name="twitter:title" content="Mirco Zeiss">
-  <meta name="twitter:description" content="Mozilla Persona gained a lot of attention recently.
-The developers have released Beta 2 at the
-beginning of last month and aim to bring Persona to half of the worldwide Internet population in the &hellip;">
+  <meta name="twitter:description" content="Based on the feedback for my last post Mozilla Persona example app with Express and CouchDB
+I made some small but quite important changes in the architecture of my app. Francois Marier suggested that &hellip;">
 
   
   <script type="text/javascript">
@@ -90,6 +88,150 @@ beginning of last month and aim to bring Persona to half of the worldwide Intern
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/not-using-email-as-the-primary-key-with-mozilla-persona/">Not Using Email as the Primary Key With Mozilla Persona</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-05-13T20:53:00+02:00" pubdate data-updated="true">May 13<span>th</span>, 2013</time>
+        
+         | <a href="/not-using-email-as-the-primary-key-with-mozilla-persona/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Based on the feedback for my last post <a href="http://mircozeiss.com/mozilla-persona-example-app-with-express-and-couchdb/">Mozilla Persona example app with Express and CouchDB</a>
+I made some small but quite important changes in the architecture of my app.</p>
+
+<p><a href="http://fmarier.org/">Francois Marier</a> suggested that we shouldn&#8217;t use our users&#8217; email addresses as the primary key
+in our db. That&#8217;s also what Mozilla&#8217;s <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Persona/The_implementor_s_guide/Enabling_users_to_change_their_email_address?redirectlocale=en-US&amp;redirectslug=Persona%2FThe_implementor_s_guide%2FEnabling_users_to_change_their_email_address">implementer&#8217;s guide</a> is telling. So
+I took the code from my last post and refactored everything. Each user is now identified by a unique key and not anymore by his email address.
+You can find the current version of the example app at GitHub <a href="https://github.com/zeMirco/mozilla-persona-express-couchdb">mozilla-persona-express-couchdb</a>.</p>
+
+<h3>Using views to find users</h3>
+
+<p>In the first version of my app I used the email as the primary key. Getting a user from db was as simple as a <code>GET</code> request
+with the appropriate email address. Now that I don&#8217;t have the email as the primary key anymore and every user is stored under
+a random string, we have to use a simple <strong>CouchDB view</strong>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="s2">&quot;views&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;byEmail&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;map&quot;</span><span class="o">:</span> <span class="s2">&quot;function(doc){</span>
+</span><span class='line'><span class="s2">      if (doc.type === &#39;user&#39;) {</span>
+</span><span class='line'><span class="s2">        emit(doc.email, doc)</span>
+</span><span class='line'><span class="s2">      }</span>
+</span><span class='line'><span class="s2">    }&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Every user document looks like the following</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="s2">&quot;_id&quot;</span><span class="o">:</span> <span class="s2">&quot;3115b40189b7dfa4d007ff7fc8536af4&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;_rev&quot;</span><span class="o">:</span> <span class="s2">&quot;2-359ee1c1e888690c9c6468b55fa48fa7&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;type&quot;</span><span class="o">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;email&quot;</span><span class="o">:</span> <span class="s2">&quot;mirco.zeiss@gmail.com&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="s2">&quot;username&quot;</span><span class="o">:</span> <span class="s2">&quot;zeMirco&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Combined with the <strong>view</strong> from above gives us the following table, which we can query with the <code>email</code> as <code>key</code>.</p>
+
+<table class="table table-striped table-hover table-condensed table-bordered">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>“test@mockmyid.com”</td>
+      <td>{&#8230;}</td>
+    </tr>
+    <tr>
+      <td>“mirco.zeiss@gmail.com”</td>
+      <td>{&#8230;}</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h3>Querying the view</h3>
+
+<p>In the first version of the app I used a simple <code>GET</code> request to retrieve the user object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">db</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I changed those lines as we have to query the view now.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">db</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;users&#39;</span><span class="p">,</span> <span class="s1">&#39;byEmail&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="nx">email</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Unfortunately that means we can&#8217;t use the <a href="http://eclipsesource.com/blogs/2013/03/01/use-your-head-checking-couchdb-document-existence/"><code>HEAD</code> request</a> to check for document existence.
+This is now done by checking the amout of <code>rows</code> we get back as an answer.</p>
+
+<h3>Let the user change his email address</h3>
+
+<p>With the new architecture in place users are able to change their email addresses as described in Mozilla&#8217;s <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Persona/The_implementor_s_guide/Enabling_users_to_change_their_email_address?redirectlocale=en-US&amp;redirectslug=Persona%2FThe_implementor_s_guide%2FEnabling_users_to_change_their_email_address">Implementer&#8217;s Guide</a>.
+I haven&#8217;t yet implemented this feature but will do so in the near future and write about my experiences. So stay tuned!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1683,6 +1825,10 @@ one less request to the server.</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/not-using-email-as-the-primary-key-with-mozilla-persona/">Not using email as the primary key with Mozilla Persona</a>
+      </li>
     
       <li class="post">
         <a href="/mozilla-persona-example-app-with-express-and-couchdb/">Mozilla Persona example app with Express and CouchDB</a>
