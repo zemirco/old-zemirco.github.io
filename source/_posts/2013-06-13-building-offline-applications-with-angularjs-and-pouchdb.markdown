@@ -365,4 +365,4 @@ That's it! We can now safely assume that our service is working correctly and do
 AngularJS and PouchDB are awesome frameworks. I hope their engineers 
 and the community will support both for a long time to come. Combined they are a match made in heaven. AngularJS gives you all the
 tools to keep your frontend code nice and tidy while PouchDB takes care of your data. Use both to write
-offline applications that run in the browser on every modern device.
+offline applications that run in the browser on every modern device. See the final app at [plnkr#BoxJTY](http://plnkr.co/edit/BoxJTY?p=preview).
