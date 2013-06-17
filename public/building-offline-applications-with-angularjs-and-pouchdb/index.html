@@ -1,0 +1,800 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Building offline applications with AngularJS and PouchDB - Mirco Zeiss</title>
+  <meta name="author" content="Mirco Zeiss">
+
+  
+  <meta name="description" content="You may have read my other post about Async CouchDB queries with nano and promises. In that post I built a small app to track how many goals a player &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Mirco Zeiss" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Fjalla+One' rel='stylesheet' type='text/css'>
+
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="zeMirco">
+  <meta name="twitter:creator" content="zeMirco">
+  <meta name="twitter:url" content="http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb">
+  <meta name="twitter:title" content="Building offline applications with AngularJS and PouchDB">
+  <meta name="twitter:description" content="You may have read my other post about Async CouchDB queries with nano and promises. In that post I built a small app to track how many goals a player
+scored per match. Every action was stored as a &hellip;">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-40074158-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Mirco Zeiss</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:mircozeiss.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about.html">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Building Offline Applications With AngularJS and PouchDB</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-17T19:20:00+02:00" pubdate data-updated="true">Jun 17<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>You may have read my other post about <a href="http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/">Async CouchDB queries with nano and promises</a>. In that post I built a small app to track how many goals a player
+scored per match. Every action was stored as a single document in CouchDB. JavaScript promises were
+used to access the data which allowed functions be easily reused.</p>
+
+<p>In this article I will build the same application without any backend. I use <a href="http://pouchdb.com/">PouchDB</a> as my database
+and <a href="http://angularjs.org/">AngularJS</a> as the frontend framework.</p>
+
+<h3>PouchDB</h3>
+
+<p>I&#8217;d like to talk a little more about PouchDB since you can find a lot of intro articles for AngularJS
+but not as many for PouchDB.</p>
+
+<blockquote><p>PouchDB is a JavaScript library that allows you to store and query data for web applications that need to work offline, and sync with an online database when you are online.</p></blockquote>
+
+<p>PouchDB provides the same API as CouchDB but works in the browser. If you already know CouchDB you
+also know how to work with PouchDB. The library is under active development and currently available as an alpha version.
+Although it is an alpha version it is very stable and so far I didn&#8217;t have any problems with the code.</p>
+
+<p>The <a href="http://pouchdb.com/api.html">documentation</a> is a good starting point. Some handy features that were added recently and are not yet in the
+documentation are</p>
+
+<ul>
+<li>built in map reduce functions</li>
+<li>and query functions.</li>
+</ul>
+
+
+<h4>Built in map reduce functions</h4>
+
+<p>You might know the built in map reduce functions from CouchDB. They are <code>_count</code>, <code>_sum</code> and <code>_stats</code>. All are written in Erlang
+and allow fast access to your data. PouchDB also has those built in functions. Therefore you don&#8217;t have to write your own and pass them as
+a parameter into the query function. A simple query looks like the following.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">emit</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">playerId</span><span class="p">,</span> <span class="kc">null</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">pouchdb</span><span class="p">.</span><span class="nx">query</span><span class="p">({</span><span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">,</span> <span class="nx">reduce</span><span class="o">:</span> <span class="s1">&#39;_count&#39;</span><span class="p">},</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="s1">&#39;1&#39;</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">res</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code above loops through all documents in our db. Whenever the mapping function finds one that has the type <code>goal</code> it emits it sorted by
+<code>playerId</code>. The query function afterwards simply counts all documents with the playerID <code>'1'</code> and returns the sum.</p>
+
+<p>Here is the code for the all the built in functions so you know what they do.</p>
+
+<p><code>_count</code> <a href="https://github.com/daleharvey/pouchdb/blob/master/src/plugins/pouchdb.mapreduce.js#L37">(source)</a> counts all documents.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span><span class="p">(</span><span class="nx">keys</span><span class="p">,</span> <span class="nx">values</span><span class="p">,</span> <span class="nx">rereduce</span><span class="p">){</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">rereduce</span><span class="p">){</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">sum</span><span class="p">(</span><span class="nx">values</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">values</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>_sum</code> <a href="https://github.com/daleharvey/pouchdb/blob/master/src/plugins/pouchdb.mapreduce.js#L33">(source)</a> returns the sum of all document values.
+It would return the same value as <code>_count</code> when every document is emitted with values equals <code>1</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span><span class="p">(</span><span class="nx">keys</span><span class="p">,</span> <span class="nx">values</span><span class="p">){</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">sum</span><span class="p">(</span><span class="nx">values</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>_stats</code> <a href="https://github.com/daleharvey/pouchdb/blob/master/src/plugins/pouchdb.mapreduce.js#L45">(source)</a> provides some basic statistical
+analysis for our data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span><span class="p">(</span><span class="nx">keys</span><span class="p">,</span> <span class="nx">values</span><span class="p">,</span> <span class="nx">rereduce</span><span class="p">){</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s1">&#39;sum&#39;</span><span class="o">:</span> <span class="nx">sum</span><span class="p">(</span><span class="nx">values</span><span class="p">),</span>
+</span><span class='line'>    <span class="s1">&#39;min&#39;</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">min</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">values</span><span class="p">),</span>
+</span><span class='line'>    <span class="s1">&#39;max&#39;</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">values</span><span class="p">),</span>
+</span><span class='line'>    <span class="s1">&#39;count&#39;</span><span class="o">:</span> <span class="nx">values</span><span class="p">.</span><span class="nx">length</span><span class="p">,</span>
+</span><span class='line'>    <span class="s1">&#39;sumsqr&#39;</span><span class="o">:</span> <span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">_sumsqr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">idx</span> <span class="k">in</span> <span class="nx">values</span><span class="p">){</span>
+</span><span class='line'>        <span class="nx">_sumsqr</span> <span class="o">+=</span> <span class="nx">values</span><span class="p">[</span><span class="nx">idx</span><span class="p">]</span> <span class="o">*</span> <span class="nx">values</span><span class="p">[</span><span class="nx">idx</span><span class="p">];</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">_sumsqr</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">})()</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Query functions</h4>
+
+<p>Query functions are needed to <a href="http://pouchdb.com/api.html#fetch_a_document">fetch a document</a> when you don&#8217;t know the document&#8217;s ID. I couldn&#8217;t find anything about query
+functions with individual keys in the documentation. So I looked at the tests and found the <a href="https://github.com/daleharvey/pouchdb/blob/decb29d057065f01a6121e129b24cd02240ef1b2/tests/test.views.js#L109-L124">test</a>
+for opts.key.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">db</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="nx">queryFun</span><span class="p">,</span> <span class="p">{</span><span class="nx">reduce</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">key</span><span class="o">:</span> <span class="s1">&#39;key2&#39;</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">_</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">equal</span><span class="p">(</span><span class="nx">res</span><span class="p">.</span><span class="nx">rows</span><span class="p">.</span><span class="nx">length</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Doc with key&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">db</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="nx">queryFun</span><span class="p">,</span> <span class="p">{</span><span class="nx">reduce</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">key</span><span class="o">:</span> <span class="s1">&#39;key3&#39;</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">_</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">equal</span><span class="p">(</span><span class="nx">res</span><span class="p">.</span><span class="nx">rows</span><span class="p">.</span><span class="nx">length</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Multiple docs with key&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">start</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It shows that we can simply use the <code>key</code> property to look for specific results in our db. The same goes for <code>startkey</code> and <code>endkey</code>
+ properties. Their documentation is in section <a href="http://pouchdb.com/api.html#fetch_documents">fetch documents</a> describing the <code>allDocs()</code> method.</p>
+
+<h3>Marry PouchDB and AngularJS</h3>
+
+<p>Since both frameworks are implemented independently, they don&#8217;t know how to work with each other. We
+have to bring PouchDB into the AngularJS world in order to have access from the controller. The best
+way to do this is using a <code>service</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">services</span><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;pouchdb&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">Pouch</span><span class="p">.</span><span class="nx">enableAllDbs</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">return</span> <span class="k">new</span> <span class="nx">Pouch</span><span class="p">(</span><span class="s1">&#39;myPouch&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Inject this service whenever you want to use PouchDB from your controller.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">myApp</span><span class="p">.</span><span class="nx">controller</span><span class="p">(</span><span class="s1">&#39;AppCtrl&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;$scope&#39;</span><span class="p">,</span> <span class="s1">&#39;pouchdb&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$scope</span><span class="p">,</span> <span class="nx">pouchdb</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// more code here</span>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Wrapping PouchDB into promises</h3>
+
+<p>The PouchDB API will probably support promises at some point <a href="https://github.com/daleharvey/pouchdb/issues/608">in the future</a>. At the moment it does not.
+If you&#8217;ve read my post about <a href="http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/">async CouchDB queries with nano and promises</a>, you know
+promises come in really handy. As AngularJS offers promises through the <code>$q</code> module we can build some wrapper functions to interact with our data.</p>
+
+<p>The wrapper is an AngularJS <strong>factory</strong> and consists of two functions. The first one <code>add(playerId)</code> adds a goal document to the db.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">add</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerId</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">$q</span><span class="p">.</span><span class="nx">defer</span><span class="p">();</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">doc</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;goal&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">playerId</span><span class="o">:</span> <span class="nx">playerId</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="nx">pouchdb</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="nx">doc</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">deferred</span><span class="p">.</span><span class="nx">promise</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We need the <code>$rootScope.$apply()</code> function because AngularJS doesn&#8217;t know what&#8217;s happening inside the <code>pouchdb.post()</code> callback.
+It loses the scope and would neither <code>reject</code> nor <code>resolve</code> the promise. Read more about this topic at <a href="http://jimhoskins.com/2012/12/17/angularjs-and-apply.html">AngularJS and scope.$apply</a>
+by Jim Hoskins.</p>
+
+<p>The second function <code>getScore(playerId)</code> counts all documents per player and returns the total amount. If no documents are found
+for a certain <code>playerId</code> it returns 0.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">getScore</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerId</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">$q</span><span class="p">.</span><span class="nx">defer</span><span class="p">();</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">emit</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">playerId</span><span class="p">,</span> <span class="kc">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="nx">pouchdb</span><span class="p">.</span><span class="nx">query</span><span class="p">({</span><span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">,</span> <span class="nx">reduce</span><span class="o">:</span> <span class="s1">&#39;_count&#39;</span><span class="p">},</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="nx">playerId</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">.</span><span class="nx">rows</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">res</span><span class="p">.</span><span class="nx">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">value</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">deferred</span><span class="p">.</span><span class="nx">promise</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can now inject this helper service into our controller and start using it. First of all get the score for each player
+on page load.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">$q</span><span class="p">.</span><span class="nx">all</span><span class="p">([</span>
+</span><span class='line'>  <span class="nx">pp</span><span class="p">.</span><span class="nx">getScore</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">),</span>
+</span><span class='line'>  <span class="nx">pp</span><span class="p">.</span><span class="nx">getScore</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">),</span>
+</span><span class='line'>  <span class="nx">pp</span><span class="p">.</span><span class="nx">getScore</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="p">]).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">score</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nx">res</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">score</span><span class="p">[</span><span class="s1">&#39;2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nx">res</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">score</span><span class="p">[</span><span class="s1">&#39;3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nx">res</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A click on a button invokes the <code>incScore()</code> function that calls our <code>add()</code> from the helper service. It creates a new
+document, saves it to db and calculates the new score.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">$scope</span><span class="p">.</span><span class="nx">incScore</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">pp</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">pp</span><span class="p">.</span><span class="nx">getScore</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'>    <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">score</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">$scope</span><span class="p">.</span><span class="nx">score</span><span class="p">[</span><span class="nx">id</span><span class="p">]</span> <span class="o">=</span> <span class="nx">score</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A working example with all code can be found at <a href="http://plnkr.co/edit/BoxJTY?p=preview">plnkr#BoxJTY</a>. Play with the scores of each player and afterwards
+close your browser. Then open your browser again and navigate to the example page. Et voilà, the individual scores stay the same. The
+values were stored in the browser&#8217;s db, completely offline. Be careful when you empty the cache. All
+values will be lost. You will also notice that when you visit the example with a different browser the
+individual scores are not the same. That&#8217;s because each browser (even each browser version) uses its own
+private database that is not shared with other browsers or browser versions. If you want to transfer the score
+to other browsers or mobile devices you have to implement a backend solution.</p>
+
+<h3>Testing</h3>
+
+<p>Not long ago I tweeted the following</p>
+
+<blockquote class="twitter-tweet"><p>when writing your next uber <a href="https://twitter.com/search/%23angularjs">#angularjs</a> blog post provide appropriate tests</p>&mdash; Mirco Zeiss (@zeMirco) <a href="https://twitter.com/zeMirco/status/344182488098291713">June 10, 2013</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>The AngularJS folks are quite passionate about testing and so am I. It can be annoying sometimes and of course
+takes more time but it is well worth it and will one day save your a**. In addition it will improve
+the quality of your code and therefore the quality of your blog post.</p>
+
+<p>So let&#8217;s write some tests for our new services. Before we start we have to think about which
+things can actually be tested.</p>
+
+<ol>
+<li><code>Pouch.enableAllDbs</code> should be set to <code>true</code></li>
+<li>The returned object should be an instance of Pouch</li>
+<li>The name of our db should be <strong>myPouch</strong></li>
+<li>The service should be able to save an object to db</li>
+<li>The service should be able to retrieve an object from db</li>
+</ol>
+
+
+<p>When all the above tests pass we can be pretty sure that we&#8217;ve done a good job.</p>
+
+<h4>1. Check if enableAllDbs is set to true</h4>
+
+<p>Setting <code>enableAllDbs</code> to <code>true</code> isn&#8217;t necessary for this small example app. However if you&#8217;d like
+to obtain a list of all databases one day this feature must have been set to <code>true</code> in advance.</p>
+
+<p>The test looks like this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">it</span><span class="p">(</span><span class="s1">&#39;should set &quot;enableAllDbs&quot; to true&#39;</span><span class="p">,</span> <span class="nx">inject</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">pouchdb</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">expect</span><span class="p">(</span><span class="nx">Pouch</span><span class="p">.</span><span class="nx">enableAllDbs</span><span class="p">).</span><span class="nx">toBeTruthy</span><span class="p">();</span>
+</span><span class='line'><span class="p">}));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That was easy. Just three lines of code. Cool, testing is fun!</p>
+
+<h4>2. Verify the constructor of the object returned from the service</h4>
+
+<p>This is also a very simple test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">it</span><span class="p">(</span><span class="s1">&#39;should return a Pouch instance&#39;</span><span class="p">,</span> <span class="nx">inject</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">pouchdb</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">expect</span><span class="p">(</span><span class="nx">pouchdb</span> <span class="k">instanceof</span> <span class="nx">Pouch</span><span class="p">).</span><span class="nx">toBeTruthy</span><span class="p">();</span>
+</span><span class='line'><span class="p">}));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Really that&#8217;s it? Yep quite nice, right?</p>
+
+<h4>3. Verify the name of our db</h4>
+
+<p>I&#8217;m sorry but I have to disappoint you. Testing is not always as easy as in the first two examples. The following is an asynchronous test and that&#8217;s not as
+simple with AngularJS and Jasmine.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">it</span><span class="p">(</span><span class="s1">&#39;should create a db with name &quot;myPouch&quot;&#39;</span><span class="p">,</span> <span class="nx">inject</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">pouchdb</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">pouchdb</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">result</span> <span class="o">=</span> <span class="nx">res</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">waitsFor</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">runs</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">db_name</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">(</span><span class="s1">&#39;_pouch_myPouch&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>First we have to call the <code>info()</code> method which gives us some information
+about our db in the callback. Within that callback we save the info to our global variable <code>result</code>. The
+<code>waitsFor()</code> and <code>runs()</code> functions are needed by Jasmine to wait for the result from our info callback and
+then continue with the test.</p>
+
+<h4>4. Test if service can save objects to db</h4>
+
+<p>For this test we simply use our new service, save an object to the database and check for the correct callback.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">it</span><span class="p">(</span><span class="s1">&#39;should allow saving new objects via a promise&#39;</span><span class="p">,</span> <span class="nx">inject</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">pp</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">pp</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">result</span> <span class="o">=</span> <span class="nx">res</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">waitsFor</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">runs</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">ok</span><span class="p">).</span><span class="nx">toBeTruthy</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>5. Test if service can retrieve objects from db</h4>
+
+<p>For our last test we try to retrieve the before saved object and check whether we got the right score.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">it</span><span class="p">(</span><span class="s1">&#39;should allow retrieving new objects via a promise&#39;</span><span class="p">,</span> <span class="nx">inject</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">pp</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">pp</span><span class="p">.</span><span class="nx">getScore</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">result</span> <span class="o">=</span> <span class="nx">res</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">waitsFor</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">result</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">runs</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&#8217;s it! We can now safely assume that our service is working correctly and does what we expect.</p>
+
+<h3>Conclusion</h3>
+
+<p>AngularJS and PouchDB are awesome frameworks. I hope their engineers
+and the community will support both for a long time to come. Combined they are a match made in heaven. AngularJS gives you all the
+tools to keep your frontend code nice and tidy while PouchDB takes care of your data. Use both to write
+offline applications that run in the browser on every modern device.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mirco Zeiss</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-17T19:20:00+02:00" pubdate data-updated="true">Jun 17<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/categories/angular-dot-js/'>Angular.js</a>, <a class='category' href='/categories/pouchdb/'>PouchDB</a>, <a class='category' href='/categories/offline/'>offline</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb/" data-via="zeMirco" data-counturl="http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/using-csrf-with-express-and-angular/" title="Previous Post: Using CSRF protection with Express and Angular">&laquo; Using CSRF protection with Express and Angular</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/building-offline-applications-with-angularjs-and-pouchdb/">Building offline applications with AngularJS and PouchDB</a>
+      </li>
+    
+      <li class="post">
+        <a href="/using-csrf-with-express-and-angular/">Using CSRF protection with Express and Angular</a>
+      </li>
+    
+      <li class="post">
+        <a href="/not-using-email-as-the-primary-key-with-mozilla-persona/">Not using email as the primary key with Mozilla Persona</a>
+      </li>
+    
+      <li class="post">
+        <a href="/mozilla-persona-example-app-with-express-and-couchdb/">Mozilla Persona example app with Express and CouchDB</a>
+      </li>
+    
+      <li class="post">
+        <a href="/async-couchdb-queries-with-nano-and-promises/">Async CouchDB queries with nano and promises</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/110362264265849877288?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Mirco Zeiss -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'blogmircozeiss';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb/';
+        var disqus_url = 'http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
