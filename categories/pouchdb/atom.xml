@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: PouchDB | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/categories/pouchdb/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-06-17T22:53:11+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Building offline applications with AngularJS and PouchDB]]></title>
+    <link href="http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb/"/>
+    <updated>2013-06-17T19:20:00+02:00</updated>
+    <id>http://mircozeiss.com/building-offline-applications-with-angularjs-and-pouchdb</id>
+    <content type="html"><![CDATA[<p>You may have read my other post about <a href="http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/">Async CouchDB queries with nano and promises</a>. In that post I built a small app to track how many goals a player
+scored per match. Every action was stored as a single document in CouchDB. JavaScript promises were
+used to access the data which allowed functions be easily reused.</p>
+
+<p>In this article I will build the same application without any backend. I use <a href="http://pouchdb.com/">PouchDB</a> as my database
+and <a href="http://angularjs.org/">AngularJS</a> as the frontend framework.</p>
+
+<h3>PouchDB</h3>
+
+<p>I'd like to talk a little more about PouchDB since you can find a lot of intro articles for AngularJS
+but not as many for PouchDB.</p>
+
+<blockquote><p>PouchDB is a JavaScript library that allows you to store and query data for web applications that need to work offline, and sync with an online database when you are online.</p></blockquote>
+
+<p>PouchDB provides the same API as CouchDB but works in the browser. If you already know CouchDB you
+also know how to work with PouchDB. The library is under active development and currently available as an alpha version.
+Although it is an alpha version it is very stable and so far I didn't have any problems with the code.</p>
+
+<p>The <a href="http://pouchdb.com/api.html">documentation</a> is a good starting point. Some handy features that were added recently and are not yet in the
+documentation are</p>
+
+<ul>
+<li>built in map reduce functions</li>
+<li>and query functions.</li>
+</ul>
+
+
+<h4>Built in map reduce functions</h4>
+
+<p>You might know the built in map reduce functions from CouchDB. They are <code>_count</code>, <code>_sum</code> and <code>_stats</code>. All are written in Erlang
+and allow fast access to your data. PouchDB also has those built in functions. Therefore you don't have to write your own and pass them as
+a parameter into the query function. A simple query looks like the following.</p>
+
+<p>```js
+var map = function(doc) {
+  if (doc.type === 'goal') {</p>
+
+<pre><code>emit(doc.playerId, null)
+</code></pre>
+
+<p>  }
+};</p>
+
+<p>pouchdb.query({map: map, reduce: '_count'}, {key: '1'}, function(err, res) {
+  if (err) console.log(err);
+  console.log(res);
+});
+```</p>
+
+<p>The code above loops through all documents in our db. Whenever the mapping function finds one that has the type <code>goal</code> it emits it sorted by
+<code>playerId</code>. The query function afterwards simply counts all documents with the playerID <code>'1'</code> and returns the sum.</p>
+
+<p>Here is the code for the all the built in functions so you know what they do.</p>
+
+<p><code>_count</code> <a href="https://github.com/daleharvey/pouchdb/blob/master/src/plugins/pouchdb.mapreduce.js#L37">(source)</a> counts all documents.</p>
+
+<p>```js
+function(keys, values, rereduce){
+  if (rereduce){</p>
+
+<pre><code>return sum(values);
+</code></pre>
+
+<p>  } else {</p>
+
+<pre><code>return values.length;
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p><code>_sum</code> <a href="https://github.com/daleharvey/pouchdb/blob/master/src/plugins/pouchdb.mapreduce.js#L33">(source)</a> returns the sum of all document values.
+It would return the same value as <code>_count</code> when every document is emitted with values equals <code>1</code>.</p>
+
+<p><code>js
+function(keys, values){
+  return sum(values);
+}
+</code></p>
+
+<p><code>_stats</code> <a href="https://github.com/daleharvey/pouchdb/blob/master/src/plugins/pouchdb.mapreduce.js#L45">(source)</a> provides some basic statistical
+analysis for our data.</p>
+
+<p>```js
+function(keys, values, rereduce){
+  return {</p>
+
+<pre><code>'sum': sum(values),
+'min': Math.min.apply(null, values),
+'max': Math.max.apply(null, values),
+'count': values.length,
+'sumsqr': (function(){
+  var _sumsqr = 0;
+  for(var idx in values){
+    _sumsqr += values[idx] * values[idx];
+  }
+  return _sumsqr;
+})()
+</code></pre>
+
+<p>  };
+  }
+```</p>
+
+<h4>Query functions</h4>
+
+<p>Query functions are needed to <a href="http://pouchdb.com/api.html#fetch_a_document">fetch a document</a> when you don't know the document's ID. I couldn't find anything about query
+functions with individual keys in the documentation. So I looked at the tests and found the <a href="https://github.com/daleharvey/pouchdb/blob/decb29d057065f01a6121e129b24cd02240ef1b2/tests/test.views.js#L109-L124">test</a>
+for opts.key.</p>
+
+<p>```js
+db.query(queryFun, {reduce: false, key: 'key2'}, function(<em>, res) {
+  equal(res.rows.length, 1, 'Doc with key');
+  db.query(queryFun, {reduce: false, key: 'key3'}, function(</em>, res) {</p>
+
+<pre><code>equal(res.rows.length, 2, 'Multiple docs with key');
+start();
+</code></pre>
+
+<p>  });
+});
+```</p>
+
+<p>It shows that we can simply use the <code>key</code> property to look for specific results in our db. The same goes for <code>startkey</code> and <code>endkey</code>
+ properties. Their documentation is in section <a href="http://pouchdb.com/api.html#fetch_documents">fetch documents</a> describing the <code>allDocs()</code> method.</p>
+
+<h3>Marry PouchDB and AngularJS</h3>
+
+<p>Since both frameworks are implemented independently, they don't know how to work with each other. We
+have to bring PouchDB into the AngularJS world in order to have access from the controller. The best
+way to do this is using a <code>service</code>.</p>
+
+<p><code>js
+services.factory('pouchdb', function() {
+  Pouch.enableAllDbs = true;
+  return new Pouch('myPouch');
+});
+</code></p>
+
+<p>Inject this service whenever you want to use PouchDB from your controller.</p>
+
+<p><code>js
+myApp.controller('AppCtrl', ['$scope', 'pouchdb', function($scope, pouchdb) {
+  // more code here
+}]);
+</code></p>
+
+<h3>Wrapping PouchDB into promises</h3>
+
+<p>The PouchDB API will probably support promises at some point <a href="https://github.com/daleharvey/pouchdb/issues/608">in the future</a>. At the moment it does not.
+If you've read my post about <a href="http://mircozeiss.com/async-couchdb-queries-with-nano-and-promises/">async CouchDB queries with nano and promises</a>, you know
+promises come in really handy. As AngularJS offers promises through the <code>$q</code> module we can build some wrapper functions to interact with our data.</p>
+
+<p>The wrapper is an AngularJS <strong>factory</strong> and consists of two functions. The first one <code>add(playerId)</code> adds a goal document to the db.</p>
+
+<p>```js
+add: function(playerId) {
+  var deferred = $q.defer();
+  var doc = {</p>
+
+<pre><code>type: 'goal',
+playerId: playerId
+</code></pre>
+
+<p>  };
+  pouchdb.post(doc, function(err, res) {</p>
+
+<pre><code>$rootScope.$apply(function() {
+  if (err) {
+    deferred.reject(err)
+  } else {
+    deferred.resolve(res)
+  }
+});
+</code></pre>
+
+<p>  });
+  return deferred.promise;
+}
+```</p>
+
+<p>We need the <code>$rootScope.$apply()</code> function because AngularJS doesn't know what's happening inside the <code>pouchdb.post()</code> callback.
+It loses the scope and would neither <code>reject</code> nor <code>resolve</code> the promise. Read more about this topic at <a href="http://jimhoskins.com/2012/12/17/angularjs-and-apply.html">AngularJS and scope.$apply</a>
+by Jim Hoskins.</p>
+
+<p>The second function <code>getScore(playerId)</code> counts all documents per player and returns the total amount. If no documents are found
+for a certain <code>playerId</code> it returns 0.</p>
+
+<p>```js
+getScore: function(playerId) {
+  var deferred = $q.defer();
+  var map = function(doc) {</p>
+
+<pre><code>if (doc.type === 'goal') {
+  emit(doc.playerId, null)
+}
+</code></pre>
+
+<p>  };
+  pouchdb.query({map: map, reduce: '_count'}, {key: playerId}, function(err, res) {</p>
+
+<pre><code>$rootScope.$apply(function() {
+  if (err) {
+    deferred.reject(err);
+  } else {
+    if (!res.rows.length) {
+      deferred.resolve(0);
+    } else {
+      deferred.resolve(res.rows[0].value);
+    }
+  }
+});
+</code></pre>
+
+<p>  });
+  return deferred.promise;
+}
+```</p>
+
+<p>We can now inject this helper service into our controller and start using it. First of all get the score for each player
+on page load.</p>
+
+<p>```js
+$q.all([
+  pp.getScore('1'),
+  pp.getScore('2'),
+  pp.getScore('3')
+]).then(function(res) {</p>
+
+<pre><code>$scope.score['1'] = res[0];
+$scope.score['2'] = res[1];
+$scope.score['3'] = res[2]
+</code></pre>
+
+<p>  });
+```</p>
+
+<p>A click on a button invokes the <code>incScore()</code> function that calls our <code>add()</code> from the helper service. It creates a new
+document, saves it to db and calculates the new score.</p>
+
+<p>```js
+$scope.incScore = function(id) {
+  pp.add(id)</p>
+
+<pre><code>.then(function(res) {
+  return pp.getScore(id);
+})
+.then(function(score) {
+  $scope.score[id] = score;
+})
+</code></pre>
+
+<p>}
+```</p>
+
+<p>A working example with all code can be found at <a href="http://plnkr.co/edit/BoxJTY?p=preview">plnkr#BoxJTY</a>. Play with the scores of each player and afterwards
+close your browser. Then open your browser again and navigate to the example page. Et voilà, the individual scores stay the same. The
+values were stored in the browser's db, completely offline. Be careful when you empty the cache. All
+values will be lost. You will also notice that when you visit the example with a different browser the
+individual scores are not the same. That's because each browser (even each browser version) uses its own
+private database that is not shared with other browsers or browser versions. If you want to transfer the score
+to other browsers or mobile devices you have to implement a backend solution.</p>
+
+<h3>Testing</h3>
+
+<p>Not long ago I tweeted the following</p>
+
+<blockquote class="twitter-tweet"><p>when writing your next uber <a href="https://twitter.com/search/%23angularjs">#angularjs</a> blog post provide appropriate tests</p>&mdash; Mirco Zeiss (@zeMirco) <a href="https://twitter.com/zeMirco/status/344182488098291713">June 10, 2013</a></blockquote>
+
+
+<script async src="http://mircozeiss.com//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>The AngularJS folks are quite passionate about testing and so am I. It can be annoying sometimes and of course
+takes more time but it is well worth it and will one day save your a**. In addition it will improve
+the quality of your code and therefore the quality of your blog post.</p>
+
+<p>So let's write some tests for our new services. Before we start we have to think about which
+things can actually be tested.</p>
+
+<ol>
+<li><code>Pouch.enableAllDbs</code> should be set to <code>true</code></li>
+<li>The returned object should be an instance of Pouch</li>
+<li>The name of our db should be <strong>myPouch</strong></li>
+<li>The service should be able to save an object to db</li>
+<li>The service should be able to retrieve an object from db</li>
+</ol>
+
+
+<p>When all the above tests pass we can be pretty sure that we've done a good job.</p>
+
+<h4>1. Check if enableAllDbs is set to true</h4>
+
+<p>Setting <code>enableAllDbs</code> to <code>true</code> isn't necessary for this small example app. However if you'd like
+to obtain a list of all databases one day this feature must have been set to <code>true</code> in advance.</p>
+
+<p>The test looks like this.</p>
+
+<p><code>js
+it('should set "enableAllDbs" to true', inject(function(pouchdb) {
+  expect(Pouch.enableAllDbs).toBeTruthy();
+}));
+</code></p>
+
+<p>That was easy. Just three lines of code. Cool, testing is fun!</p>
+
+<h4>2. Verify the constructor of the object returned from the service</h4>
+
+<p>This is also a very simple test.</p>
+
+<p><code>js
+it('should return a Pouch instance', inject(function(pouchdb) {
+  expect(pouchdb instanceof Pouch).toBeTruthy();
+}));
+</code></p>
+
+<p>Really that's it? Yep quite nice, right?</p>
+
+<h4>3. Verify the name of our db</h4>
+
+<p>I'm sorry but I have to disappoint you. Testing is not always as easy as in the first two examples. The following is an asynchronous test and that's not as
+simple with AngularJS and Jasmine.</p>
+
+<p>```js
+it('should create a db with name "myPouch"', inject(function(pouchdb) {
+  var result;</p>
+
+<p>  pouchdb.info(function(err, res) {</p>
+
+<pre><code>result = res;
+</code></pre>
+
+<p>  });</p>
+
+<p>  waitsFor(function() {</p>
+
+<pre><code>return result;
+</code></pre>
+
+<p>  });</p>
+
+<p>  runs(function() {</p>
+
+<pre><code>expect(result.db_name).toEqual('_pouch_myPouch');
+</code></pre>
+
+<p>  });</p>
+
+<p>}));
+```</p>
+
+<p>First we have to call the <code>info()</code> method which gives us some information
+about our db in the callback. Within that callback we save the info to our global variable <code>result</code>. The
+<code>waitsFor()</code> and <code>runs()</code> functions are needed by Jasmine to wait for the result from our info callback and
+then continue with the test.</p>
+
+<h4>4. Test if service can save objects to db</h4>
+
+<p>For this test we simply use our new service, save an object to the database and check for the correct callback.</p>
+
+<p>```js
+it('should allow saving new objects via a promise', inject(function(pp) {
+  var result;</p>
+
+<p>  pp.add('1').then(function(res) {</p>
+
+<pre><code>result = res;
+</code></pre>
+
+<p>  });</p>
+
+<p>  waitsFor(function() {</p>
+
+<pre><code>return result;
+</code></pre>
+
+<p>  });</p>
+
+<p>  runs(function() {</p>
+
+<pre><code>expect(result.ok).toBeTruthy();
+</code></pre>
+
+<p>  });</p>
+
+<p>}));
+```</p>
+
+<h4>5. Test if service can retrieve objects from db</h4>
+
+<p>For our last test we try to retrieve the before saved object and check whether we got the right score.</p>
+
+<p>```js
+it('should allow retrieving new objects via a promise', inject(function(pp) {
+  var result;</p>
+
+<p>  pp.getScore('1').then(function(res) {</p>
+
+<pre><code>result = res;
+</code></pre>
+
+<p>  });</p>
+
+<p>  waitsFor(function() {</p>
+
+<pre><code>return result;
+</code></pre>
+
+<p>  });</p>
+
+<p>  runs(function() {</p>
+
+<pre><code>expect(result).toBe(1);
+</code></pre>
+
+<p>  });</p>
+
+<p>}));
+```</p>
+
+<p>That's it! We can now safely assume that our service is working correctly and does what we expect.</p>
+
+<h3>Conclusion</h3>
+
+<p>AngularJS and PouchDB are awesome frameworks. I hope their engineers
+and the community will support both for a long time to come. Combined they are a match made in heaven. AngularJS gives you all the
+tools to keep your frontend code nice and tidy while PouchDB takes care of your data. Use both to write
+offline applications that run in the browser on every modern device.</p>
+]]></content>
+  </entry>
+  
+</feed>
