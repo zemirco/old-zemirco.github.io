@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-06-17T22:58:58+02:00</updated>
+  <updated>2013-06-27T22:57:49+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,329 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Grunt deployment process with Jade]]></title>
+    <link href="http://mircozeiss.com/grunt-deployment-process-with-jade/"/>
+    <updated>2013-06-27T19:20:00+02:00</updated>
+    <id>http://mircozeiss.com/grunt-deployment-process-with-jade</id>
+    <content type="html"><![CDATA[<p>When building web projects you want to concatenate and minify CSS and JavaScript files
+before deployment. Instead of having multiple single files you only
+have one file with one single request. It also means you have to change the path to the script inside
+your <code>.html</code> or <code>.jade</code> file. During development your code often looks like this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script1.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script2.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script3.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script4.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For deployment you might want to change this to a single request fetching a minified file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In this post I will demonstrate three solutions for this problem.</p>
+
+<ol>
+<li><code>grunt-usemin</code> with <code>.html</code> files</li>
+<li><code>grunt-preprocess</code> with a tmp/ , dev/ and prod/ folder</li>
+<li><code>grunt-preprocess</code> with only dev/ and prod/ folder</li>
+</ol>
+
+
+<h3>Meet grunt-usemin</h3>
+
+<p>If you are using plain HTML files <a href="https://github.com/yeoman/grunt-usemin">grunt-usemin</a> is your best friend. In your <code>index.html</code> file
+you only have to add two lines of code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="c">&lt;!-- build:js js/app.js --&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script1.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script2.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script3.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/script4.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- endbuild --&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Add a task for <code>usemin</code> to your <code>Gruntfile.js</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">useminPrepare</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">html</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;deploy/views/example.html&#39;</span><span class="p">]</span>
+</span><span class='line'><span class="p">},</span>
+</span><span class='line'><span class="nx">usemin</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">html</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;deploy/views/example.html&#39;</span><span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After running <code>grunt usemin</code> your <code>index.html</code> contains the link to the minified file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;js/app.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Unfortunately this doesn&#8217;t work for <code>.jade</code> files as <code>grunt-usemin</code> spits out HTML code. Therefore
+let&#8217;s look at another solution.</p>
+
+<h3>grunt-preprocess as an alternative</h3>
+
+<p><a href="https://github.com/onehealth/grunt-preprocess">grunt-preprocess</a> doesn&#8217;t alter your code. It only shows or hides certain blocks depending
+on various settings. You can use it in HTML, JavaScript, CSS, C, Java, etc.</p>
+
+<h4>Code in tmp/ and deploy to dev/ and prod/</h4>
+
+<p>One way to set up your app structure would be coding in a tmp/ folder and deploying to a development folder for testing and
+to a production folder for final deployments.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>/tmp
+</span><span class='line'>/dev
+</span><span class='line'>/prod
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With this structure you can use <code>grunt-preprocess</code> as follows.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="c">&lt;!-- @if production=false --&gt;</span>
+</span><span class='line'>script(src=&quot;/javascripts/script1.js&quot;)
+</span><span class='line'>script(src=&quot;/javascripts/script2.js&quot;)
+</span><span class='line'>script(src=&quot;/javascripts/script3.js&quot;)
+</span><span class='line'><span class="c">&lt;!-- @endif --&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">&lt;!-- @if production=true --&gt;</span>
+</span><span class='line'>script(src=&quot;/javascripts/script.min.js&quot;)
+</span><span class='line'><span class="c">&lt;!-- @endif --&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can&#8217;t work with this file directly since it loads your single script files and also the minified file. Include
+the tasks for building dev and prod versions into your <code>Gruntfile.js</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">preprocess</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// production version with min script</span>
+</span><span class='line'>  <span class="nx">prod</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">src</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;deploy/views/layout-wrong.jade&#39;</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">inline</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">context</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">production</span><span class="o">:</span> <span class="kc">true</span>  <span class="c1">// important</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="c1">// development version</span>
+</span><span class='line'>  <span class="nx">dev</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">src</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;deploy/views/layout-wrong.jade&#39;</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">inline</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">context</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">production</span><span class="o">:</span> <span class="kc">false</span>  <span class="c1">// important</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The important part is the <code>context</code> where you can set the <code>production</code> variable to <code>true</code> or <code>false</code>.
+When running <code>grunt preprocess:dev</code> you&#8217;ll get</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script1.js&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script2.js&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script3.js&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>compared to running <code>grunt preprocess:prod</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script.min.js&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This setup adds extra overhead to your project folder and requires recompiling on every change. To neglect recompiling
+you could add a <strong>watch</strong> task to your <code>Gruntfile</code> so the files are recreated every time you make changes. Still it is not an ideal
+solution.</p>
+
+<h4>Code in dev/ and deploy to /prod</h4>
+
+<p>Here is a neat little trick that allows working with your development files and deploying
+files that contain the links to minified assets. So you don&#8217;t have to work in a tmp folder and
+build files either for your development or your deployment folder.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'>  <span class="c">&lt;!--</span> <span class="err">@</span><span class="nx">exclude</span> <span class="o">--&gt;</span>
+</span><span class='line'>  <span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script1.js&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script2.js&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script3.js&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="c">&lt;!--</span> <span class="err">@</span><span class="nx">endexclude</span> <span class="o">--&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">&lt;!--</span> <span class="err">@</span><span class="nx">exclude</span> <span class="o">--&gt;</span>
+</span><span class='line'><span class="c1">//- &lt;!-- @endexclude --&gt;</span>
+</span><span class='line'>  <span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script.min.js&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The preprocess task in your Gruntfile looks like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">preprocess</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">inline</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">src</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;deploy/views/layout.jade&#39;</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">inline</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>How does this work? Well, first of all if you start your Express app and navigate to the index page
+you will only see</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;/javascripts/script.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It is not documented but Jade won&#8217;t complain when you use plain HTML comments. That allows us to use this
+nifty trick. The line <code>script(src="/javascripts/script.min.js")</code> is commented out because of the <code>//-</code> one line
+above. Therefore you can work with this file during development and <code>script.min.js</code> won&#8217;t be called.
+Now comes the magic: if you build your deployment files everything between <code>&lt;!-- @exclude --&gt;</code> and
+<code>&lt;!-- @endexclude --&gt;</code> is removed from the file. That means your single script files don&#8217;t exist anymore
+and also the comment <code>//-</code> above the minified script will be removed. That means the line <code>script(src="/javascripts/script.min.js")</code>
+is now active and calls your minified file.</p>
+
+<p>To make this work keep an eye on the indentation of your <code>layout.jade</code> file. The following won&#8217;t work.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="c">&lt;!-- @exclude --&gt;</span>
+</span><span class='line'>script(src=&quot;/javascripts/script1.js&quot;)
+</span><span class='line'>script(src=&quot;/javascripts/script2.js&quot;)
+</span><span class='line'>script(src=&quot;/javascripts/script3.js&quot;)
+</span><span class='line'><span class="c">&lt;!-- @endexclude --&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">&lt;!-- @exclude --&gt;</span>
+</span><span class='line'>//- <span class="c">&lt;!-- @endexclude --&gt;</span>
+</span><span class='line'>  script(src=&quot;/javascripts/script.min.js&quot;)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It produces this output in Jade.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='jade'><span class='line'><span class="nt">script</span>(<span class="na">src=</span><span class="s">&quot;//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js&quot;</span>)
+</span><span class='line'>  <span class="nt">script</span>(<span class="na">src=</span><span class="s">&quot;/javascripts/script.min.js&quot;</span>)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Compiled to HTML it looks like this and won&#8217;t execute any code</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;...&quot;</span><span class="nt">&gt;</span><span class="nx">script</span><span class="p">(</span><span class="nx">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/script.min.js&quot;</span><span class="p">)</span><span class="nt">&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Conclusion</h3>
+
+<p>Replacing links to your assets for deployment is easy. When dealing with <code>html</code> files
+use <a href="https://github.com/yeoman/grunt-usemin">grunt-usemin</a>. Otherwise give <a href="https://github.com/onehealth/grunt-preprocess">grunt-preprocess</a> a try. You can find an example Express
+app with all the relevant grunt tasks at <a href="https://github.com/zeMirco/grunt-jade-preprocess">github</a>. To get the app ready for deployment run the following
+commands.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>grunt deploy
+</span><span class='line'><span class="nb">cd </span>deployment
+</span><span class='line'>node app.js
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now open your browser, navigate to <a href="http://localhost:3000">localhost:3000</a> and take a look at
+the source code. You should see only one JavaScript file <code>script.min.js</code>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Building offline applications with AngularJS and PouchDB]]></title>
