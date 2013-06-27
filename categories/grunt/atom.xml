@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Grunt | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/categories/grunt/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-06-27T22:57:49+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Grunt deployment process with Jade]]></title>
+    <link href="http://mircozeiss.com/grunt-deployment-process-with-jade/"/>
+    <updated>2013-06-27T19:20:00+02:00</updated>
+    <id>http://mircozeiss.com/grunt-deployment-process-with-jade</id>
+    <content type="html"><![CDATA[<p>When building web projects you want to concatenate and minify CSS and JavaScript files
+before deployment. Instead of having multiple single files you only
+have one file with one single request. It also means you have to change the path to the script inside
+your <code>.html</code> or <code>.jade</code> file. During development your code often looks like this.</p>
+
+<p>```html</p>
+
+<script src="js/script1.js"></script>
+
+
+<script src="js/script2.js"></script>
+
+
+<script src="js/script3.js"></script>
+
+
+<script src="js/script4.js"></script>
+
+
+<p>```</p>
+
+<p>For deployment you might want to change this to a single request fetching a minified file.</p>
+
+<p>```html</p>
+
+<script src="js/script.min.js"></script>
+
+
+<p>```</p>
+
+<p>In this post I will demonstrate three solutions for this problem.</p>
+
+<ol>
+<li><code>grunt-usemin</code> with <code>.html</code> files</li>
+<li><code>grunt-preprocess</code> with a tmp/ , dev/ and prod/ folder</li>
+<li><code>grunt-preprocess</code> with only dev/ and prod/ folder</li>
+</ol>
+
+
+<h3>Meet grunt-usemin</h3>
+
+<p>If you are using plain HTML files <a href="https://github.com/yeoman/grunt-usemin">grunt-usemin</a> is your best friend. In your <code>index.html</code> file
+you only have to add two lines of code.</p>
+
+<p>```html</p>
+
+<!-- build:js js/app.js -->
+
+
+<script src="js/script1.js"></script>
+
+
+<script src="js/script2.js"></script>
+
+
+<script src="js/script3.js"></script>
+
+
+<script src="js/script4.js"></script>
+
+
+<!-- endbuild -->
+
+
+<p>```</p>
+
+<p>Add a task for <code>usemin</code> to your <code>Gruntfile.js</code>.</p>
+
+<p><code>js
+useminPrepare: {
+  html: ['deploy/views/example.html']
+},
+usemin: {
+  html: ['deploy/views/example.html']
+}
+</code></p>
+
+<p>After running <code>grunt usemin</code> your <code>index.html</code> contains the link to the minified file.</p>
+
+<p>```html</p>
+
+<script src="js/app.js"></script>
+
+
+<p>```</p>
+
+<p>Unfortunately this doesn't work for <code>.jade</code> files as <code>grunt-usemin</code> spits out HTML code. Therefore
+let's look at another solution.</p>
+
+<h3>grunt-preprocess as an alternative</h3>
+
+<p><a href="https://github.com/onehealth/grunt-preprocess">grunt-preprocess</a> doesn't alter your code. It only shows or hides certain blocks depending
+on various settings. You can use it in HTML, JavaScript, CSS, C, Java, etc.</p>
+
+<h4>Code in tmp/ and deploy to dev/ and prod/</h4>
+
+<p>One way to set up your app structure would be coding in a tmp/ folder and deploying to a development folder for testing and
+to a production folder for final deployments.</p>
+
+<p><code>
+/tmp
+/dev
+/prod
+</code></p>
+
+<p>With this structure you can use <code>grunt-preprocess</code> as follows.</p>
+
+<p>```</p>
+
+<!-- @if production=false -->
+
+
+<p>script(src="/javascripts/script1.js")
+script(src="/javascripts/script2.js")
+script(src="/javascripts/script3.js")</p>
+
+<!-- @endif -->
+
+
+
+
+<!-- @if production=true -->
+
+
+<p>script(src="/javascripts/script.min.js")</p>
+
+<!-- @endif -->
+
+
+<p>```</p>
+
+<p>You can't work with this file directly since it loads your single script files and also the minified file. Include
+the tasks for building dev and prod versions into your <code>Gruntfile.js</code>.</p>
+
+<p>```js
+preprocess: {
+  // production version with min script
+  prod: {</p>
+
+<pre><code>src: ['deploy/views/layout-wrong.jade'],
+options: {
+  inline: true,
+  context: {
+    production: true  // important
+  }
+}
+</code></pre>
+
+<p>  },
+  // development version
+  dev: {</p>
+
+<pre><code>src: ['deploy/views/layout-wrong.jade'],
+options: {
+  inline: true,
+  context: {
+    production: false  // important
+  }
+}
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>The important part is the <code>context</code> where you can set the <code>production</code> variable to <code>true</code> or <code>false</code>.
+When running <code>grunt preprocess:dev</code> you'll get</p>
+
+<p><code>
+script(src="/javascripts/script1.js")
+script(src="/javascripts/script2.js")
+script(src="/javascripts/script3.js")
+</code></p>
+
+<p>compared to running <code>grunt preprocess:prod</code></p>
+
+<p><code>
+script(src="/javascripts/script.min.js")
+</code></p>
+
+<p>This setup adds extra overhead to your project folder and requires recompiling on every change. To neglect recompiling
+you could add a <strong>watch</strong> task to your <code>Gruntfile</code> so the files are recreated every time you make changes. Still it is not an ideal
+solution.</p>
+
+<h4>Code in dev/ and deploy to /prod</h4>
+
+<p>Here is a neat little trick that allows working with your development files and deploying
+files that contain the links to minified assets. So you don't have to work in a tmp folder and
+build files either for your development or your deployment folder.</p>
+
+<p>```
+  <!-- @exclude -->
+  script(src="/javascripts/script1.js")
+  script(src="/javascripts/script2.js")
+  script(src="/javascripts/script3.js")
+  <!-- @endexclude --></p>
+
+<!-- @exclude -->
+
+
+<p>//- <!-- @endexclude -->
+  script(src="/javascripts/script.min.js")
+```</p>
+
+<p>The preprocess task in your Gruntfile looks like this</p>
+
+<p>```js
+preprocess: {
+  inline: {</p>
+
+<pre><code>src: ['deploy/views/layout.jade'],
+options: {
+  inline: true
+}
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>How does this work? Well, first of all if you start your Express app and navigate to the index page
+you will only see</p>
+
+<p>```html</p>
+
+<script src="http://mircozeiss.com/javascripts/script.min.js"></script>
+
+
+<p>```</p>
+
+<p>It is not documented but Jade won't complain when you use plain HTML comments. That allows us to use this
+nifty trick. The line <code>script(src="/javascripts/script.min.js")</code> is commented out because of the <code>//-</code> one line
+above. Therefore you can work with this file during development and <code>script.min.js</code> won't be called.
+Now comes the magic: if you build your deployment files everything between <code>&lt;!-- @exclude --&gt;</code> and
+<code>&lt;!-- @endexclude --&gt;</code> is removed from the file. That means your single script files don't exist anymore
+and also the comment <code>//-</code> above the minified script will be removed. That means the line <code>script(src="/javascripts/script.min.js")</code>
+is now active and calls your minified file.</p>
+
+<p>To make this work keep an eye on the indentation of your <code>layout.jade</code> file. The following won't work.</p>
+
+<p>```</p>
+
+<!-- @exclude -->
+
+
+<p>script(src="/javascripts/script1.js")
+script(src="/javascripts/script2.js")
+script(src="/javascripts/script3.js")</p>
+
+<!-- @endexclude -->
+
+
+
+
+<!-- @exclude -->
+
+
+<p>//- <!-- @endexclude -->
+  script(src="/javascripts/script.min.js")
+```</p>
+
+<p>It produces this output in Jade.</p>
+
+<p><code>jade
+script(src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js")
+  script(src="/javascripts/script.min.js")
+</code></p>
+
+<p>Compiled to HTML it looks like this and won't execute any code</p>
+
+<p>```html</p>
+
+<script src="...">script(src="/javascripts/script.min.js")</script>
+
+
+<p>```</p>
+
+<h3>Conclusion</h3>
+
+<p>Replacing links to your assets for deployment is easy. When dealing with <code>html</code> files
+use <a href="https://github.com/yeoman/grunt-usemin">grunt-usemin</a>. Otherwise give <a href="https://github.com/onehealth/grunt-preprocess">grunt-preprocess</a> a try. You can find an example Express
+app with all the relevant grunt tasks at <a href="https://github.com/zeMirco/grunt-jade-preprocess">github</a>. To get the app ready for deployment run the following
+commands.</p>
+
+<p><code>bash
+grunt deploy
+cd deployment
+node app.js
+</code></p>
+
+<p>Now open your browser, navigate to <a href="http://localhost:3000">localhost:3000</a> and take a look at
+the source code. You should see only one JavaScript file <code>script.min.js</code>.</p>
+]]></content>
+  </entry>
+  
+</feed>
