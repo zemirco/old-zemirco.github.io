@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-06-27T22:57:49+02:00</updated>
+  <updated>2013-07-15T21:07:23+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,386 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Sync multiple AngularJS apps without server via PouchDB]]></title>
+    <link href="http://mircozeiss.com/sync-multiple-angularjs-apps-without-server-via-pouchdb/"/>
+    <updated>2013-07-10T20:34:00+02:00</updated>
+    <id>http://mircozeiss.com/sync-multiple-angularjs-apps-without-server-via-pouchdb</id>
+    <content type="html"><![CDATA[<p>Nowadays several solutions exist to keep web apps in sync and/or store data offline with JavaScript:</p>
+
+<ul>
+<li><a href="http://socket.io/">Socket.io</a></li>
+<li><a href="http://www.breezejs.com/">Breeze.js</a></li>
+<li><a href="https://towtruck.mozillalabs.com/">TowTruck</a></li>
+<li><a href="https://www.firebase.com/">Firebase</a></li>
+<li><a href="http://pusher.com/">Pusher</a></li>
+<li><a href="https://parse.com/products">Parse</a></li>
+<li>and my latest favorite <a href="http://hood.ie/">Hood.ie</a></li>
+</ul>
+
+
+<p>I could go on with that list but you get the idea. Some of the mentioned technologies are more powerful
+and have more features out of the box than others. They usually need a server that runs your app and
+takes care of all the business logic. In this post I will demonstrate how to build a web app that
+syncs data automatically, runs on all modern platforms, stores data persistently and <strong>doesn&#8217;t need a server</strong>.
+The app is powered by <a href="http://angularjs.org/">AngularJS</a> and <a href="http://pouchdb.com/">PouchDB</a>.</p>
+
+<p>The video shows the final app in action. On the left side we have Chrome and Firefox showing our <code>index.html</code> from file and
+on the right side you can see Futon, the admin panel for CouchDB.</p>
+
+<iframe width="640" height="480" src="http://www.youtube.com/embed/QSC1fnfUlU0" frameborder="0" allowfullscreen></iframe>
+
+
+<br>
+
+
+<br>
+
+
+<h3>Install CouchDB</h3>
+
+<p>First of all you have to install CouchDB. You could use some third party instance provider like <a href="https://cloudant.com/">Cloudant</a>
+ or <a href="http://www.iriscouch.com/">Iris Couch</a>. However our final example won&#8217;t work with them because we need to have CORS enabled on our CouchDB.
+ CORS was introduced with v1.3. Cloudant instances are running on v1.0.2 whereas Iris Couch actually provides
+  v1.3. Sadly you cannot enable CORS by hand. That&#8217;s why we will work with our own instance.</p>
+
+<p>Go to <a href="http://couchdb.apache.org/">couchdb.apache.org</a> and click on the big fat download button. Download
+the package for your operating system, select a mirror, wait and then open CouchDB. On my MacBook I get
+a little CouchDB icon on my Menu Bar. Click on it and select <strong>Open admin console</strong>. Or just open your browser and navigate to
+<a href="http://127.0.0.1:5984/_utils/">127.0.0.1:5984/_utils</a>. You are now inside Futon, which is the admin tool for CouchDB.</p>
+
+<p>First of all we have to <a href="http://docs.couchdb.org/en/latest/cors.html">enable CORS</a>. Go to section <em>httpd</em> and
+set <strong>enable_cors</strong> to true. Navigate to the bottom of the page and click on <strong>Add a new section</strong>. Enter the following into
+the form that pops up</p>
+
+<ul>
+<li>section: cors</li>
+<li>option: origins</li>
+<li>value: *</li>
+</ul>
+
+
+<p>Now let&#8217;s create our database. Click on <strong>Create database &#8230;</strong> and enter <code>ng-db</code>. The name is important and we have
+to use the exact name later on for the client code. That&#8217;s it! Our CouchDB instance is running, CORS is enabled
+and we have a database to work with. Next install PouchDB.</p>
+
+<h3>Download PouchDB</h3>
+
+<p>To add PouchDB to your app you simply have to <a href="http://download.pouchdb.com/pouchdb-nightly.min.js">download</a> the JS file. As always I recommend working with the
+non-minified version during development and switch to the min version for deployment. Include the .js file inside
+your index.html.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;pouchdb.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Done. We can now start using PouchDB in our app.</p>
+
+<h3>Create AngularJS app</h3>
+
+<p>Activate AngularJS as shown in the <a href="http://angularjs.org/">docs</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">myApp</span> <span class="o">=</span> <span class="nx">angular</span><span class="p">.</span><span class="nx">module</span><span class="p">(</span><span class="s1">&#39;myApp&#39;</span><span class="p">,</span> <span class="p">[]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>PouchDB service</h4>
+
+<p>The first service we create simply makes the PouchDB instance available inside the AngularJS world.
+It also turns on continuous replication so changes are automatically synced between database and client
+no matter where they occur.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">myApp</span><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;myPouch&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">mydb</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Pouch</span><span class="p">(</span><span class="s1">&#39;ng-pouch&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">Pouch</span><span class="p">.</span><span class="nx">replicate</span><span class="p">(</span><span class="s1">&#39;ng-pouch&#39;</span><span class="p">,</span> <span class="s1">&#39;http://127.0.0.1:5984/ng-db&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">continuous</span><span class="o">:</span> <span class="kc">true</span><span class="p">});</span>
+</span><span class='line'>  <span class="nx">Pouch</span><span class="p">.</span><span class="nx">replicate</span><span class="p">(</span><span class="s1">&#39;http://127.0.0.1:5984/ng-db&#39;</span><span class="p">,</span> <span class="s1">&#39;ng-pouch&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">continuous</span><span class="o">:</span> <span class="kc">true</span><span class="p">});</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">mydb</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>PouchDB promises wrapper</h4>
+
+<p>Our second service is a simple wrapper around PouchDB&#8217;s native API to save and remove documents. The
+service provides two helper functions <code>return()</code> and <code>remove(id)</code> that both return promises. That keeps
+the async code nice and tidy.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">myApp</span><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;pouchWrapper&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;$q&#39;</span><span class="p">,</span> <span class="s1">&#39;$rootScope&#39;</span><span class="p">,</span> <span class="s1">&#39;myPouch&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$q</span><span class="p">,</span> <span class="nx">$rootScope</span><span class="p">,</span> <span class="nx">myPouch</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">add</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">$q</span><span class="p">.</span><span class="nx">defer</span><span class="p">();</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">doc</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;todo&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">text</span><span class="o">:</span> <span class="nx">text</span>
+</span><span class='line'>      <span class="p">};</span>
+</span><span class='line'>      <span class="nx">myPouch</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="nx">doc</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'>      <span class="p">});</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">deferred</span><span class="p">.</span><span class="nx">promise</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nx">remove</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">deferred</span> <span class="o">=</span> <span class="nx">$q</span><span class="p">.</span><span class="nx">defer</span><span class="p">();</span>
+</span><span class='line'>      <span class="nx">myPouch</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">myPouch</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">doc</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">deferred</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">deferred</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>              <span class="p">});</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'>      <span class="p">});</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">deferred</span><span class="p">.</span><span class="nx">promise</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>PouchDB event listener</h4>
+
+<p>Our last service is a listener that emits events whenever PouchDB fires the <code>onChange</code> event. It either
+emits <code>newTodo</code> when a new document is added to the database or <code>delTodo</code> when a document is deleted. The change
+object coming from PouchDB looks like the following</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;6F48205D-E97B-4621-ACAD-4CD3DFAC074E&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;seq&quot;</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;changes&quot;</span><span class="o">:</span> <span class="p">[{</span><span class="s2">&quot;rev&quot;</span><span class="o">:</span><span class="s2">&quot;2-96ea3cf93a75c6510c08c95e42686aa1&quot;</span><span class="p">}],</span>
+</span><span class='line'>  <span class="s2">&quot;deleted&quot;</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From the key <code>deleted</code> we get a Boolean value that tells us if the change was a deletion or an addition
+to our database. If the value is <code>true</code> we know that an object was deleted from our database and we therefore
+emit a <code>delTodo</code> event with the document id. If the value is <code>false</code> we unfortunately don&#8217;t get the new
+object directly from the <code>onChange</code> handler. We only get the document id and have to manually get it
+via GET request. At the end we fire a <code>newTodo</code> event with the new document as data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">myApp</span><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;listener&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;$rootScope&#39;</span><span class="p">,</span> <span class="s1">&#39;myPouch&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$rootScope</span><span class="p">,</span> <span class="nx">myPouch</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">myPouch</span><span class="p">.</span><span class="nx">changes</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">continuous</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">onChange</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">change</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">change</span><span class="p">.</span><span class="nx">deleted</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">myPouch</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">change</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>              <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$broadcast</span><span class="p">(</span><span class="s1">&#39;newTodo&#39;</span><span class="p">,</span> <span class="nx">doc</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">})</span>
+</span><span class='line'>          <span class="p">});</span>
+</span><span class='line'>        <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$apply</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$broadcast</span><span class="p">(</span><span class="s1">&#39;delTodo&#39;</span><span class="p">,</span> <span class="nx">change</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Main controller</h4>
+
+<p>Our controller combines the three services and creates a link to our view. First of all we create
+an empty array that will hold our todo objects. The <code>submit()</code> function
+is executed whenever the <strong>Add</strong> button is clicked. A click on the small cross calls the <code>remove(id)</code>
+function.</p>
+
+<p>At the end of our controller we have the listener for our two custom events <code>newTodo</code> and <code>delTodo</code>.
+It adds or removes items from the <code>todos</code> array.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">myApp</span><span class="p">.</span><span class="nx">controller</span><span class="p">(</span><span class="s1">&#39;TodoCtrl&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;$scope&#39;</span><span class="p">,</span> <span class="s1">&#39;listener&#39;</span><span class="p">,</span> <span class="s1">&#39;pouchWrapper&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$scope</span><span class="p">,</span> <span class="nx">listener</span><span class="p">,</span> <span class="nx">pouchWrapper</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">submit</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">pouchWrapper</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">$scope</span><span class="p">.</span><span class="nx">text</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">$scope</span><span class="p">.</span><span class="nx">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">reason</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">reason</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">remove</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">pouchWrapper</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">id</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'><span class="c1">//      console.log(res);</span>
+</span><span class='line'>    <span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">reason</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">reason</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">todos</span> <span class="o">=</span> <span class="p">[];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">$on</span><span class="p">(</span><span class="s1">&#39;newTodo&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">todo</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">todos</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">todo</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">$on</span><span class="p">(</span><span class="s1">&#39;delTodo&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">&lt;</span><span class="nx">$scope</span><span class="p">.</span><span class="nx">todos</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">$scope</span><span class="p">.</span><span class="nx">todos</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">_id</span> <span class="o">===</span> <span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$scope</span><span class="p">.</span><span class="nx">todos</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>One thing I haven&#8217;t figured out yet is an error message similar to:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>GET http://127.0.0.1:5984/ng-db/_local%2F4e458454e3c7031672110dc4a02c72f4 404 (Object Not Found)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The rest works absolutely fine and although I get this error message I can&#8217;t see any problems during sync.</p>
+
+<h3>Conclusion</h3>
+
+<p>We used AngularJS and PouchDB to build a small app that syncs serverless and stores data persistently.
+ Changes are distributed automatically. They can be made inside the database, on any client or on any third
+ party device that pushes changes to the connected CouchDB. AngularJS events update our models in the controller that pushes
+ changes to our views via two-way data binding. It is possible to add todos to the app when offline and
+ as soon you are back online all data is synced to the connected devices. For more information about
+ the topic visit <a href="http://nobackend.org/">nobackend.org</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Grunt deployment process with Jade]]></title>
