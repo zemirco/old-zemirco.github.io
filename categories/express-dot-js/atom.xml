@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Express.js | Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/categories/express-dot-js/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-07-15T21:07:23+02:00</updated>
+  <updated>2013-08-22T18:27:48+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,373 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[GitHub like signup form with AngularJS and Bootstrap v3]]></title>
+    <link href="http://mircozeiss.com/github-like-signup-form-with-angularjs-and-bootstrap-v3/"/>
+    <updated>2013-08-21T22:37:00+02:00</updated>
+    <id>http://mircozeiss.com/github-like-signup-form-with-angularjs-and-bootstrap-v3</id>
+    <content type="html"><![CDATA[<p>Building a modern and clean signup form still requires more coding than one might think. <a href="https://github.com/">GitHub</a>
+has a simple signup form that I really like. Just three input fields (username, email and password) and you are ready
+to go.</p>
+
+<p>In this post we will build a fully featured copy of this signup form. AngularJS manages our frontend and a small Express.js
+app takes care of our backend. As an extra gimmick I added password verification to make sure that our users don't
+ have typos in their passwords. In the end we have some validation in the frontend and also in our backend. Take a look
+ at the <a href="http://mysterious-escarpment-9591.herokuapp.com/signup">final app</a>. If everything was correct you should see a json object with your username, email and the hashed password
+ in addition to some extra information. I also uploaded the whole code to GitHub <a href="https://github.com/zeMirco/ng-signup-form">ng-signup-form</a>.</p>
+
+<h3>The layout</h3>
+
+<p>We use the brand new <a href="http://getbootstrap.com/">Bootstrap v3</a> to build our page. Inside a panel component we have a form with
+four input fields. The first one is for username, the second one for email and the last two ones are for password and
+ password verification.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/signup-form-layout.png" title="Signup form built on top of Bootstrap v3" ></p>
+
+<h3>Backend with Express.js</h3>
+
+<p>Our backend consists of only three routes: <code>GET /signup</code>, <code>POST /signup</code> and <code>POST /signup/check/username</code>. Our main route <code>/</code> redirects
+directly to <code>/signup</code> so when you open the page the signup form is immediately shown.</p>
+
+<p>The code for the first route <code>GET /signup</code> looks like the following.</p>
+
+<p><code>js
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+</code></p>
+
+<p>It simply takes our <code>signup.jade</code> template and renders it. Our second route <code>POST /signup</code> is the target for the signup form. Let's go through the code step by step.
+First of all we get the values of the input fields from the request object.</p>
+
+<p><code>js
+var username = req.body.username;
+var email = req.body.email;
+var password = req.body.password;
+var verification = req.body.verification;
+</code></p>
+
+<p>Afterwards we perform some input validation, check for duplicate username, create a salt and hashed password
+and at the end send a response back to the user. Whenever we encounter invalid data we rerender the
+<code>signup.jade</code> template with an additional error message to tell the user what went wrong. Let's start with some input validation.</p>
+
+<h4>1. Input validation on the backend</h4>
+
+<p>Although our submit button is disabled as long as we don't have valid values in our input fields, some clever
+people will be able to send invalid data to our backend. That's why we have to double check the incoming data
+on the server. We have to make sure that none of the fields are empty, the username doesn't contain any
+non-url-safe characters, email value is a valid email address and finally that the provided password matches
+the verification.</p>
+
+<p>All in all the code looks like this.</p>
+
+<p>```js
+var error = null;
+// regexp from https://github.com/angular/angular.js/blob/master/src/ng/directive/input.js#L4
+var EMAIL_REGEXP = /<sup>[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+.[A-Za-z]{2,6}$/;</sup></p>
+
+<p>// check for valid inputs
+if (!username || !email || !password || !verification) {
+  error = 'All fields are required';
+} else if (username !== encodeURIComponent(username)) {
+  error = 'Username may not contain any non-url-safe characters';
+} else if (!email.match(EMAIL_REGEXP)) {
+  error = 'Email is invalid';
+} else if (password !== verification) {
+  error = 'Passwords don\'t match';
+}</p>
+
+<p>if (error) {
+  response.status(403);
+  response.render('signup', {</p>
+
+<pre><code>error: error
+</code></pre>
+
+<p>  });
+  return
+}
+```</p>
+
+<h4>2. Check for duplicate username</h4>
+
+<p>In a real world app you would query your database to check for duplicate usernames. In this example
+I'm using an in-memory array with json data as dummy database. We simply loop through the array to see
+if an entry with the requested username already exists.</p>
+
+<p>```js
+// dummy db
+var dummyDb = [
+  {username: 'john', email: 'john@email.com'},
+  {username: 'jack', email: 'jack@email.com'},
+  {username: 'jim', email: 'jim@email.com'},
+];</p>
+
+<p>// check if username is already taken
+for (var i = 0; i &lt; dummyDb.length; i++) {
+  if (dummyDb[i].username === username) {</p>
+
+<pre><code>response.status(403);
+response.render('signup', {
+  error: 'Username is already taken'
+});
+return;
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>Pro tip: Never do the same for duplicate email addresses. Read more about this topic in Troy Hunt's excellent
+post <a href="http://www.troyhunt.com/2012/05/everything-you-ever-wanted-to-know.html">Everything you ever wanted to know about building a secure password reset feature</a>.</p>
+
+<h4>3. Create salt and hash password</h4>
+
+<p>Just for completeness and demonstration purpose I included a small function to create a random salt and hash the provided
+password. It might help beginners and reminds everyone never to save passwords in plain text to your db.</p>
+
+<p>```js
+// create salt and hash password
+pass.hash(password, function(err, salt, hash){
+  if (err) console.log(err);</p>
+
+<p>  // yeah we have a new user
+  var user = {</p>
+
+<pre><code>username: username,
+email: email,
+salt: salt,
+hash: hash,
+createdAt: Date.now()
+</code></pre>
+
+<p>  };</p>
+
+<p>  // for fully featured example check duplicate email, send verification link and save user to db</p>
+
+<p>  response.json(200, user)</p>
+
+<p>});
+```</p>
+
+<p>I used <a href="https://github.com/visionmedia/node-pwd">pwd</a> to generate the salt and hash the password. You need to include the <a href="https://github.com/visionmedia/node-pwd/pull/3/files">pull request</a>
+from jlubawy to make this work for node v0.10 and above. An alternative is <a href="https://github.com/ncb000gt/node.bcrypt.js/">bcrypt</a>.</p>
+
+<p>That's it. We're are almost done with our backend. I will explain the third route <code>POST /signup/check/username</code> in the section
+<strong>Custom validators</strong>.</p>
+
+<h3>Form validation with AngularJS</h3>
+
+<p>A good starting point for form validation with AngularJS is the section in the guide <a href="http://docs.angularjs.org/guide/forms">about forms</a>.
+First of all you might want to tell the browser not to validate your form since we'd like to use AngularJS for that. Simply add <code>novalidate</code>
+as an attribute to your form.</p>
+
+<p>In our example we use two of the built in validators namely <code>required</code> and <code>email</code>. <code>required</code> makes sure you really enter some content
+into the input fields and <code>email</code> uses a regular expression to verify a correct format of the email address. To show error message whenever one
+of those validators returns an error we use Bootstrap's <code>.help-block</code> class in conjunction with the <code>ngShow</code> directive.</p>
+
+<p><code>
+span.help-block(ng-show="form.username.$dirty &amp;&amp; form.username.$error.required") Please choose a username
+span.help-block(ng-show="form.email.$dirty &amp;&amp; form.email.$error.email") Email is invalid
+</code></p>
+
+<p>You might wonder what <code>$dirty</code> is doing in our code. Every form and every form element in the AngularJS world has two states: <code>$pristine</code> and
+<code>$dirty</code>. Your form gets the <code>$pristine</code> state on initial page load before you start entering text into the input fields. So before touching your form it is <code>$pristine</code>. As soon as you start
+entering values the forms loses this state and gets the <code>$dirty</code> state because you started working with it. AngularJS also provides CSS classes
+to allow for different styling of these states <code>.ng-pristine</code> and <code>.ng-dirty</code>. Read more about that topic in the AngularJS docs about <a href="http://docs.angularjs.org/api/ng.directive:form.FormController">FormController</a>.
+If we used the same code as above but without <code>form.username.$dirty</code> and <code>form.email.$dirty</code> the span blocks would be visible on page load.</p>
+
+<h4>Custom validators</h4>
+
+<p>Our first custom validator sends a <code>POST</code> request to the server to check if the username is already taken. We will use a similar
+structure as GitHub does. They send a request to <code>/signup_check/username</code> and if the username is already taken they respond with
+a status of 403 and the message <code>Username already taken</code>. The same goes for usernames that contain invalid characters.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/github-dev-tools-headers.png" title="Chrome dev tools showing request and response headers" ></p>
+
+<p>Here is the code of our Express app.</p>
+
+<p>```js
+app.post('/signup/check/username', function(req, res) {
+  var username = req.body.username;
+  // check if username contains non-url-safe characters
+  if (username !== encodeURIComponent(username)) {</p>
+
+<pre><code>res.json(403, {
+  invalidChars: true
+});
+return;
+</code></pre>
+
+<p>  }
+  // check if username is already taken - query your db here
+  var usernameTaken = false;
+  for (var i = 0; i &lt; dummyDb.length; i++) {</p>
+
+<pre><code>if (dummyDb[i].username === username) {
+  usernameTaken = true;
+  break;
+}
+</code></pre>
+
+<p>  }
+  if (usernameTaken) {</p>
+
+<pre><code>res.json(403, {
+  isTaken: true
+});
+return
+</code></pre>
+
+<p>  }
+  // looks like everything is fine
+  res.send(200);
+});
+```</p>
+
+<p>We first check for non-url-safe characters and afterwards if the username is already taken. If one of those is the case
+we send status 403 and some json data back to the client to tell it what went wrong. If everything is fine we simply send
+a status of 200 without any data.</p>
+
+<p>On the client side we build a custom directive called <code>unique-username</code>.</p>
+
+<p>```js
+app.directive('uniqueUsername', ['$http', function($http) {<br/>
+  return {</p>
+
+<pre><code>require: 'ngModel',
+link: function(scope, elem, attrs, ctrl) {
+  scope.busy = false;
+  scope.$watch(attrs.ngModel, function(value) {
+
+    // hide old error messages
+    ctrl.$setValidity('isTaken', true);
+    ctrl.$setValidity('invalidChars', true);
+
+    if (!value) {
+      // don't send undefined to the server during dirty check
+      // empty username is caught by required directive
+      return;
+    }
+
+    // show spinner
+    scope.busy = true;
+
+    // send request to server
+    $http.post('/signup/check/username', {username: value})
+      .success(function(data) {
+        // everything is fine -&gt; do nothing
+        scope.busy = false;
+      })
+      .error(function(data) {
+
+        // display new error message
+        if (data.isTaken) {
+          ctrl.$setValidity('isTaken', false);
+        } else if (data.invalidChars) {
+          ctrl.$setValidity('invalidChars', false);
+        }
+
+        scope.busy = false;
+      });
+  })
+}
+</code></pre>
+
+<p>  }
+}]);
+```</p>
+
+<p>We can use this directive in the same way we did before with <code>required</code> and <code>email</code> validators.</p>
+
+<p><code>js
+span.help-block(ng-show="form.username.$dirty &amp;&amp; form.username.$error.isTaken") Username already taken
+span.help-block(ng-show="form.username.$dirty &amp;&amp; form.username.$error.invalidChars") Username may not contain any non-url-safe characters
+</code></p>
+
+<p>The <code>uniqueUsername</code> directive also shows a spinner while talking to the server. Through <code>ng-show="busy"</code> we can hide and show the spinner.
+The icon is taken from the Glyphicons that come with Bootstrap and some CSS makes it spin.</p>
+
+<p>```css
+@-webkit-keyframes rotating {
+  from {</p>
+
+<pre><code>-webkit-transform: rotate(0deg);
+</code></pre>
+
+<p>  }
+  to {</p>
+
+<pre><code>-webkit-transform: rotate(360deg);
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>.rotating {
+  float: right;
+  position: relative;
+  top: -24px;
+  right: 10px;
+  -webkit-animation: rotating 1s linear infinite;
+}
+```</p>
+
+<p>Our second custom form validation method checks whether the password and the password verification input fields have exactly the
+same values. Again we use a custom directive for that.</p>
+
+<p>```js
+app.directive('match', [function () {
+  return {</p>
+
+<pre><code>require: 'ngModel',
+link: function (scope, elem, attrs, ctrl) {
+
+  scope.$watch('[' + attrs.ngModel + ', ' + attrs.match + ']', function(value){
+    ctrl.$setValidity('match', value[0] === value[1] );
+  }, true);
+
+}
+</code></pre>
+
+<p>  }
+}]);
+```</p>
+
+<p>To use this directive apply it to the password input field as well as the verification input field.</p>
+
+<p><code>
+input.form-control(type="password", name="password", id="password", ng-model="password", required, match="verification")
+input.form-control(type="password", name="verification", id="verification", ng-model="verification", required, match="password")
+</code></p>
+
+<p>The error message works as expected but only show it when the verification input fields contains a value.</p>
+
+<p><code>
+span.help-block(ng-show="form.verification.$dirty &amp;&amp; form.verification.$error.match &amp;&amp; !form.verification.$error.required") Passwords don't match
+</code></p>
+
+<p>Last but not least we keep the submit button disabled as long as our form contains validation errors.</p>
+
+<p><code>
+input.btn.btn-primary(type="submit", value="Sign up", ng-disabled="form.$invalid")
+</code></p>
+
+<h3>Conclusion</h3>
+
+<p>We've built a signup form very similar to the one GitHub uses with an Express.js backend and AngularJS
+on the frontend. In addition to the form validators already provided by AngularJS we've implemented two
+custom form validators for unique usernames and password verification. Take a look at the final <a href="http://mysterious-escarpment-9591.herokuapp.com/signup">app</a>. Try usernames like
+<strong>john</strong>, <strong>jack</strong> and <strong>jim</strong>.</p>
+
+<p>One thing I couldn't achieve is sending invalid usernames and emails back from the server to the client.
+So that the input fields already contain the false information and the user just has to correct them. That
+doesn't work because AngularJS doesn't allow an invalid email inside an input field of type <code>email</code>. To
+better understand the problem take a look at a quick <a href="http://plnkr.co/edit/XzcCA7?p=preview">example</a>. If you've got an idea how to solve this problem
+please feel free to comment below or provide an answer to my question at <a href="http://stackoverflow.com/questions/18217916/how-to-init-invalid-email-and-show-in-inputtype-email">stackoverflow</a>. Thank you!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Grunt deployment process with Jade]]></title>
@@ -922,453 +1289,6 @@ var email = $.cookie('email') || null;
 Persona is a great technology and admins will have less to worry about, as no passwords are stored in the db.</p>
 
 <p>I'm sure my example is far from being perfect so if you see any mistakes or find room for improvements please open an <a href="https://github.com/zeMirco/mozilla-persona-express-couchdb/issues">issue</a> at GitHub.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to pass JavaScript variables from a server to Angular.js]]></title>
-    <link href="http://mircozeiss.com/how-to-pass-javascript-variables-from-a-server-to-angular/"/>
-    <updated>2013-04-13T00:00:00+02:00</updated>
-    <id>http://mircozeiss.com/how-to-pass-javascript-variables-from-a-server-to-angular</id>
-    <content type="html"><![CDATA[<p>I came across the problem of sending JavaScript variables from my backend,
-in this case an <a href="http://expressjs.com/">Express.js</a> server,
-to my frontend, means an <a href="http://angularjs.org/">Angular.js</a> controller. I'm using <a href="http://jade-lang.com/">Jade</a> as my template engine but the
-presented solutions should work with others, too.</p>
-
-<p>Basically you've got three options for doing this:</p>
-
-<ol>
-<li>Put the variable into the view file inside a <code>script</code> tag</li>
-<li>Make an HTTP request from Angular and serve the data as JSON from the
-backend</li>
-<li>Be smart and use <code>ng-init</code></li>
-</ol>
-
-
-<p>At the end of the article you find a link to a GitHub repo containing working
-examples for all the presented solutions. To play with the code fork and
-modify it according to your needs or start from scratch and add code while
-reading on. So, let's start.</p>
-
-<p>First create an empty directory, use <code>express</code> command to create all necessary files and run
-<code>npm install</code> to download additional modules. At the end start your server with <code>node app.js</code>.</p>
-
-<p><code>bash
-mkdir express-to-ngcontroller
-cd express-to-ngcontroller
-express
-npm install
-node app.js
-</code></p>
-
-<p>Afterwards you should see the message</p>
-
-<p><code>bash
-Express server listening on port 3000
-</code></p>
-
-<p>So far we've just set up our backend. Now it's time to add some Angular code to your <code>layout.jade</code>.</p>
-
-<p>```
-doctype 5
-html(ng-app)
-  head</p>
-
-<pre><code>title= title
-link(rel='stylesheet', href='http://mircozeiss.com/stylesheets/style.css')
-script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js")
-script(src="/javascripts/controller.js")
-</code></pre>
-
-<p>  body</p>
-
-<pre><code>a(href="/solution-one") solution one
-span -
-a(href="/solution-two") solution two
-span -
-a(href="/solution-three") solution three
-block content
-</code></pre>
-
-<p>```</p>
-
-<p>Let's have a look at the above code. Activate Angular for the whole page by
-adding <code>ng-app</code> as an attribute to the <code>html</code> tag. Load <code>angular.min.js</code> from
- Google CDN and <code>controller.js</code> from file. Inside the body I created a basic
- menu to navigate from one
-solution to the other.</p>
-
-<p>Last but not least create some dummy data at the server. In production this
-data is loaded from a database, but in this example I want to keep everything
- nice and simple. Copy the following code to your <code>app.js</code>.</p>
-
-<p>```js
-var users = {
-  1: {</p>
-
-<pre><code>name: 'john',
-email: 'john@email.com'
-</code></pre>
-
-<p>  },
-  2: {</p>
-
-<pre><code>name: 'peter',
-email: 'peter@email.com'
-</code></pre>
-
-<p>  },
-  3: {</p>
-
-<pre><code>name: 'max',
-email: 'max@email.com'
-</code></pre>
-
-<p>  }
-};
-```</p>
-
-<p>Now everything should be set up and we can start tinkering with the different
- solutions.</p>
-
-<h3>1. Put variable inside view file</h3>
-
-<p>Inside your <code>app.js</code> file create an additional route for <code>GET /solution-one</code></p>
-
-<p>```javascript
-app.get('/solution-one', function(req, res) {
-  res.render('solutionOne', {</p>
-
-<pre><code>title: 'Express and Angular marriage',
-users: users
-</code></pre>
-
-<p>  })
-});
-```</p>
-
-<p>We pass our <code>users</code> object to the view as a local variable named
-<code>users</code>. Running this code would throw an error as we haven't created the view
-<code>solutionOne.jade</code> yet. Create this file inside the <code>views/</code> directory and
-put the following code inside</p>
-
-<p></p>
-
-<p>```
-extends layout</p>
-
-<p>block content
-  div(ng-controller="UserCtrl")</p>
-
-<pre><code>h1= title
-p Welcome to #{title}
-ul
-  li(ng-repeat="user in users") {{ user.name }} - {{user.email}}
-</code></pre>
-
-<p>  script</p>
-
-<pre><code>var users = !{JSON.stringify(users)}
-</code></pre>
-
-<p>```
-</p>
-
-<p>With <code>ng-controller="UserCtrl"</code> we tell Angular which controller we'd like
- to use for all the DOM children of this element. At the bottom of the file
- we've put some extra JavaScript with a global variable called <code>users</code> that
- loads the contents from the local variable <code>users</code> passed to the view.
- Notice that we have to use <code>!{}</code> instead of <code>#{}</code>, which is usually used in
- Jade for interpolation. However <code>#{}</code> escapes HTML code and would create
- something like this</p>
-
-<p><code>js
-var users = {&amp;quot;1&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;john&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;john@email.com&amp;quot;},&amp;quot;2&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;peter&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;peter@email.com&amp;quot;},&amp;quot;3&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;max&amp;quot;,&amp;quot;email&amp;quot;:&amp;quot;max@email.com&amp;quot;}}
-</code></p>
-
-<p>That's not what we want. We want a nicely formatted String representation of
-our JSON object. That's why we need <code>!{}</code>.</p>
-
-<p>Then we need to load the content of this variable into our Angular scope.
-This is necessary for the <code>ng-repeat</code> directive as it doesn't work with
-variables, which are outside of the Angular scope. Open <code>controller.js</code> and
- put the following code inside.</p>
-
-<p><code>js
-function UserCtrl($scope) {
-  $scope.users = users;
-}
-</code></p>
-
-<p>Start the server with <code>node app.js</code> and navigate to <code>/solution-one</code>. You
-should see a list with our three users where each list item contains the
-<code>name</code> and <code>email</code>. Nice, solution one works but let's have a look at the
-pros and cons.</p>
-
-<h4>Pro</h4>
-
-<p>Solution one is probably the easiest to understand and fastest to implement.
-Every step is comprehensible and nothing fancy is going on.</p>
-
-<h4>Contra</h4>
-
-<p>Using global variables in JavaScript is a No-Go. However in this case it is
-not that bad as the content of the global variable <code>users</code> is loaded into
-scope at page load. Manipulating <code>users</code> afterwards doesn't have any effects
-on the scope and our frontend.</p>
-
-<p>Still it is not the best solution. Let's look at another one.</p>
-
-<h3>2. HTTP request from Angular to a JSON API</h3>
-
-<p>Inside <code>app.js</code> create another route for <code>GET /solution-two</code></p>
-
-<p>```js
-app.get('/solution-two', function(req, res) {
-  res.render('solutionTwo', {</p>
-
-<pre><code>title: 'Express and Angular marriage'
-</code></pre>
-
-<p>  })
-});
-```</p>
-
-<p>and create the view <code>solutionTwo.jade</code> inside the <code>views/</code> folder with the
-following content</p>
-
-<p></p>
-
-<p>```
-extends layout</p>
-
-<p>block content
-  div(ng-controller="UserTwoCtrl")</p>
-
-<pre><code>h1= title
-p Welcome to #{title}
-ul
-  li(ng-repeat="user in users") {{user.name}} - {{user.email}}
-</code></pre>
-
-<p>```</p>
-
-<p></p>
-
-<p>You might have noticed that we haven't passed any data as local variables
-from our Express backend to the view. When you start the server and navigate
-with your browser to <code>/solution-one</code> you won't see any users listed. We did
-add another controller <code>UserTwoCtrl</code> to our view and we will add some
-functionality now.</p>
-
-<p>```js
-function UserTwoCtrl($scope, $http) {
-  $http.get('/solution-two/data').success(function(data) {</p>
-
-<pre><code>$scope.users = data
-</code></pre>
-
-<p>  })
-}
-```</p>
-
-<p>As soon as the controller is initiated by Angular it automatically makes a
- GET request to <code>/solution-two/data</code> and assigns the fetched data to <code>$scope.users</code>.
- Now refresh the page and see what happened. You should see an
- error saying</p>
-
-<p><code>
-Failed to load resource: the server responded with a status of 404 (Not Found)
-</code></p>
-
-<p>Your terminal running the server should log</p>
-
-<p><code>
-GET /solution-two/data 404
-</code></p>
-
-<p>It simply means that we haven't implemented the route <code>GET
-/solution-two/data</code> yet. So let's do this by adding the following code to the
- <code>app.js</code> file</p>
-
-<p><code>js
-app.get('/solution-two/data', function(req, res) {
-  res.json(users);
-});
-</code></p>
-
-<p>Restart the server and with your browser go to <code>/solution-two/data</code>. You
-should see our <code>users</code> object as JSON. Now go to <code>/solution-two</code> and, voila,
-everything works as expected. Three list items are created each showing name
-and email. The screenshot shows the extra request as the last action.</p>
-
-<p><img src="https://s3.amazonaws.com/mircozeiss.com/angular-extra-http-request.png" title="Angular HTTP request fetching JSON data" ></p>
-
-<h4>Pro</h4>
-
-<p>Making HTTP request in order to get JSON data is common these days.
-Every major web service offers some kind of API to allow third party access.
-In theses cases, where you don't have the necessary data on your own server,
-it is the best solution to make an HTTP request from your frontend. You
-could, of course, make the request from the server, get the data and send it
-to the client as shown in solution one. This, however,
-adds unnecessary overhead to our server and by calling the API from the
-client we can save valuable resources.</p>
-
-<h4>Contra</h4>
-
-<p>The second solution needs the most additional code and also an extra route
-from which the data is served as JSON. This can get a bit messy because you
-basically have to serve every route twice. Once for the view and once for the
-data. Therefore it is still not the perfect solution, which leads us to our last
-method.</p>
-
-<h3>3. Be smart and use ng-init</h3>
-
-<p>The third and probably best solution makes use of the <a href="http://docs-angularjs-org-dev.appspot.com/api/ng.directive:ngInit">ngInit</a> directive.</p>
-
-<blockquote><p>The ngInit directive specifies initialization tasks to be executed before
-the template enters execution mode during bootstrap.</p></blockquote>
-
-<p>What does that mean?</p>
-
-<p>Short answer: The expression (variable + content) given to ngInit is loaded
-into scope and made available under this name.</p>
-
-<p>Let's have a look at the example from the Angular docs</p>
-
-<p></p>
-
-<p>```html
-&lt;!doctype html>
-<html ng-app>
-  <head></p>
-
-<pre><code>&lt;script src="http://code.angularjs.org/angular-1.0.2.min.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;div ng-init="greeting='Hello'; person='World'"&gt;
-  {{greeting}} {{person}}!
-&lt;/div&gt;
-</code></pre>
-
-<p>  </body>
-</html>
-```</p>
-
-<p></p>
-
-<p>The variable <code>$scope.greeting</code> holds the String <code>'Hello'</code> and <code>$scope.person='World'</code>. Both are available inside the scope although not explicitly
- specified inside a controller.</p>
-
-<p>We could rewrite and simplify the example like this</p>
-
-<p><code>js
-function MyCtrl($scope) {
-  $scope.greeting = 'Hello';
-  $scope.person = 'World'
-}
-</code></p>
-
-<p>and</p>
-
-<p></p>
-
-<p>```html
-&lt;!doctype html>
-<html ng-app>
-  <head></p>
-
-<pre><code>&lt;script src="http://code.angularjs.org/angular-1.0.2.min.js"&gt;&lt;/script&gt;
-&lt;script src="http://mircozeiss.com/javascripts/controller.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;div ng-controller="MyCtrl"&gt;
-  {{greeting}} {{person}}!
-&lt;/div&gt;
-</code></pre>
-
-<p>  </body>
-</html>
-```</p>
-
-<p></p>
-
-<p>So let's combine this approach and our initial problem. First,
-add a new route <code>GET /solution-three</code> to <code>app.js</code> and create the
-corresponding view <code>solutionThree.jade</code>:</p>
-
-<p>```js
-app.get('/solution-three', function(req, res) {
-  res.render('solutionThree', {</p>
-
-<pre><code>title: 'Express and Angular marriage',
-users: users
-</code></pre>
-
-<p>  })
-});
-```</p>
-
-<p></p>
-
-<p>```
-extends layout</p>
-
-<p>block content
-  div(ng-controller="UserThreeCtrl", ng-init="users= #{JSON.stringify(users)}")</p>
-
-<pre><code>h1= title
-p Welcome to #{title}
-ul
-  li(ng-repeat="user in users") {{user.name}} - {{user.email}}
-</code></pre>
-
-<p>```</p>
-
-<p></p>
-
-<p>As you can see we pass our <code>users</code> variable to the Jade template as a local
-variable. Inside the template we convert the JSON object to its String
-representation and assign it to the Angular variable <code>users</code>. Later on we
-have access to this variable and use a regular <code>ngRepeat</code> directive to create
- the list of users. Start the server, navigate to <code>/solution-three</code> and
- you should the expected list of users.</p>
-
-<h4>Pro</h4>
-
-<p>It is the cleanest solution. We don't have to use global variables and we
-don't have to make an extra HTTP request. It is also the solution that needs
-the least amount of code.</p>
-
-<h4>Contra</h4>
-
-<p>The concept behind <code>ngInit</code> might be a bit confusing at the beginning. For
-further insights and to understand how Angular actually renders a page I
-recommend reading <a href="http://docs.angularjs.org/guide/bootstrap">Bootstrap</a> (not
- related to <a href="http://twitter.github.io/bootstrap/">Twitter's Bootstrap</a>) and
- <a href="http://docs.angularjs.org/guide/compiler">HTML Compiler</a>.</p>
-
-<h3>Conclusion</h3>
-
-<p>You've learned that several solutions exist for passing data from your backend to an Angular
-controller. While solution one being the worst it depends on your architecture and your requirements
-whether solution two or three fits better. I personally tend to use the last solution as I have to make
-one less request to the server.</p>
-
-<p>As promised at the beginning you can find the working example at GitHub under
- <a href="https://github.com/zeMirco/zemirco.github.io/tree/source/code-examples/server-vars-ngcontroller">server-vars-ngcontroller</a>.</p>
-
-<p><strong>Pro Tip</strong>: Don't mix Jade's <code>for user in users</code> and <code>ng-repeat="user in users"</code>
- from Angular. I did that once at the beginning and was totally frustrated
- because nothing worked as expected. You can image my feelings when I found
- that mistake. Well, it was late that night!</p>
 ]]></content>
   </entry>
   
