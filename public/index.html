@@ -9,11 +9,8 @@
   <meta name="author" content="Mirco Zeiss">
 
   
-  <meta name="description" content="Nowadays several solutions exist to keep web apps in sync and/or store data offline with JavaScript: Socket.io
-Breeze.js
-TowTruck
-Firebase
-Pusher &hellip;">
+  <meta name="description" content="If you want complete control over your servers and at the same time the simplicity to deploy as easy as
+git push server master Dokku will be your &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -42,13 +39,8 @@ Pusher &hellip;">
   <meta name="twitter:creator" content="zeMirco">
   <meta name="twitter:url" content="http://mircozeiss.com">
   <meta name="twitter:title" content="Mirco Zeiss">
-  <meta name="twitter:description" content="Nowadays several solutions exist to keep web apps in sync and/or store data offline with JavaScript: Socket.io
-Breeze.js
-TowTruck
-Firebase
-Pusher
-Parse
-and my latest favorite Hood.ie I could go on &hellip;">
+  <meta name="twitter:description" content="If you want complete control over your servers and at the same time the simplicity to deploy as easy as
+git push server master Dokku will be your next favorite tool. In this post I will walk you &hellip;">
 
   
   <script type="text/javascript">
@@ -96,6 +88,724 @@ and my latest favorite Hood.ie I could go on &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/">Dokku In-depth Tutorial - Your Private PaaS on Amazon EC2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-10T22:20:00+02:00" pubdate data-updated="true">Oct 10<span>th</span>, 2013</time>
+        
+         | <a href="/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>If you want complete control over your servers and at the same time the simplicity to deploy as easy as
+<code>git push server master</code> <a href="https://github.com/progrium/dokku">Dokku</a> will be your next favorite tool.</p>
+
+<p>In this post I will walk you through the process of installing Dokku on a fresh Amazon EC2 instance running Ubuntu Server
+13.04.</p>
+
+<h3>Set up your Amazon EC2 instance</h3>
+
+<p>Log in to your AWS console and go to EC2. From your dashboard click on &#8220;Launch Instance&#8221;. Under step one &#8220;Choose AMI&#8221; find
+&#8220;Ubuntu Server 13.04&#8221; and click on &#8220;Select&#8221;.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/01_choose_ami.png" title="Ubuntu Server 13.04 instance" ></p>
+
+<p>In step two &#8220;Choose Instance Type&#8221; select the micro instance. It has enough power for any small prototype and is eligible
+for the AWS free usage tier. If you need more RAM, disk space or CPU you can also select one of the other instances. For
+this post it doesn&#8217;t matter, as the following steps will be the same.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/02_choose_instance_type.png" title="Choose Instance Type" ></p>
+
+<p>In step three &#8220;Configure Instance&#8221; I left everything as is.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/03_configure_instance.png" title="Configure Instance" ></p>
+
+<p>The same goes for step four &#8220;Add storage&#8221;. Usually you don&#8217;t need a lot of storage. For images, videos and other
+files I always use S3.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/04_add_storage.png" title="Add Storage" ></p>
+
+<p>In step five &#8220;Tag Instance&#8221; give your instance a name. That makes it easier later on to find it in the list of all
+your instances. I chose &#8220;Node.js via Dokku&#8221;.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/05_tag_instance.png" title="Tag Instance" ></p>
+
+<p>Leave everything as is in step six &#8220;Configure Security Group&#8221;. The wizard will create a new security group for your
+instance. In my case it is called &#8220;launch-wizard-1&#8221;. At the bottom you can see that only port 22 is open for SSH access.
+We will change this later on to access our instance through the web with a browser.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/06_configure_security_group.png" title="Configure Security Group" ></p>
+
+<p>Last but not least check that everything is correct in step seven &#8220;Review&#8221;. Click on &#8220;Launch&#8221; to start your fresh instance.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/07_review.png" title="Review" ></p>
+
+<p>To connect to this instance via SSH you need to create a key pair (or use an existing one if you have). I named mine
+&#8220;dokku&#8221; and downloaded the &#8220;dokku.pem&#8221; file.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/08_key_pair.png" title="Key Pair" ></p>
+
+<p>Et voilà you&#8217;ve created a new instance, downloaded the necessary key pair and after a short amount of time
+you&#8217;ll see the instance within your list of instances with a green status indicator that says &#8220;running&#8221;. That concludes
+the first section and in the next one we will connect to the instance and install Dokku.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/10_instance_screenshot.png" title="Instance Screenshot" ></p>
+
+<h3>Install Dokku</h3>
+
+<p>First of all connect to your server via SSH. I&#8217;ll simply use the terminal but you can use any tool you want. Select
+the &#8220;Node.js via Dokku&#8221; instance from the list and on top of the page click on &#8220;Connect&#8221;. A popup window will open
+with further instructions.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/11_connect_to_instance.png" title="Connect To Your Instance" ></p>
+
+<p>At the top &#8220;A standalone SSH client&#8221; should be selected. Open your terminal and change the working directory to the folder
+where you put the previously downloaded &#8220;docker.pem&#8221; file. Then run <code>chmod 400 dokku.pem</code> to change the permissions for your
+key pair. Afterwards copy the line under &#8220;Example&#8221; and paste it into your terminal. Don&#8217;t worry about the message that the
+authenticity cannot be established. Simply answer the prompt with &#8220;yes&#8221; and press enter.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/12_RSA_fingerprint.png" title="RSA fingerprint" ></p>
+
+<p>Afterwards you should see a welcome message from your Ubuntu server.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/13_connected_to_server.png" title="Server success message" ></p>
+
+<p>Now that you are connected to your server we can install Dokku. Follow the instructions from the <a href="https://github.com/progrium/dokku#installing">GitHub page</a>.
+Run <code>wget -qO- https://raw.github.com/progrium/dokku/master/bootstrap.sh | sudo bash</code>. That will install all the necessary tools needed to run Dokku.
+The whole process will take about five minutes and at the end you will see a message that asks you to copy
+your public key to the server.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/14_dokku_installed.png" title="Dokku installed" ></p>
+
+<p>Make sure you replace <code>root@ip-10-228-95-82</code> with the username and address you&#8217;ve used before to connect to your server.
+Then you have to run <code>gitreceive upload-key progrium</code> as an admin with <code>sudo</code>. It doesn&#8217;t say it in the success message
+but on GitHub under <a href="https://github.com/progrium/dokku#configuring">Configuring</a> it is stated. Finally you can replace
+<code>progrium</code> with any username you want. It will be the username that is used by git. I simply chose <code>dokku</code>.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/15_copy_ssh_key.png" title="Copy SSH Key" ></p>
+
+<p>The last step to make Dokku work is to create a <code>VHOST</code> file in <code>/home/git/</code>. On your server change the directory to <code>/home/git/</code>
+and run <code>sudo touch VHOST</code> to create the file and <code>sudo nano VHOST</code> to open the file with the nano editor. Then paste
+the public DNS of your instance into this file and close it with CTRL+X. Afterwards run <code>cat VHOST</code> to make sure the
+DNS was saved correctly.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/17_setting_vhost.png" title="Setting VHOST" ></p>
+
+<p>That&#8217;s it! Your server is ready, Dokku is ready and the only thing left is our app.</p>
+
+<h3>Node.js app</h3>
+
+<p>We will simply use the <a href="http://expressjs.com/">Express</a> starter app and run it on our server. In a terminal on your local
+computer run <code>express</code> and <code>npm install</code> to create the app. As Dokku is inspired by <a href="https://www.heroku.com/">Heroku</a> every app
+needs a Procfile to tell our server which commands it should run to start our express app. Usually we run <code>node app.js</code> to start
+our app and therefore we have to write the same into the Procfile. Run <code>touch Procfile</code> to create it,
+<code>echo web: node app.js &gt; Procfile</code> to put the right command into the file and <code>cat Procfile</code> to verify that everything
+worked as expected.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/19_procfile.png" title="Procfile" ></p>
+
+<p>It is also recommended to create a <code>.gitignore</code> file and to put the <code>node_modules/</code> directory inside. We don&#8217;t have
+to copy this folder to our server as Dokku will run <code>npm install</code> which will install all required modules from our <code>package.json</code>.
+Run <code>touch .gitignore</code> and <code>echo node_modules/ &gt; .gitignore</code> to set up this file.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/16_gitignore.png" title="Gitignore" ></p>
+
+<p>Now you are ready to deploy. Initialize git with <code>git init</code>, add all the files with <code>git add .</code> and write your first
+commit message <code>git commit -m "init"</code>. To deploy the code to our server we have to set the remote target for git. Run
+<code>git remote add [name] git@[DNS]:[appname]</code> to add our remote server. For <code>[name]</code> I chose <code>aws</code>, for <code>[DNS]</code> I copied
+my public DNS from the Amazon EC2 dashboard and as <code>[appname]</code> I selected <code>node-js-example</code>.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/18_git_add_remote.png" title="Git Add Remote" ></p>
+
+<p>Now simply run <code>git push aws master</code> to deploy the app to our server. You will see a success message that says that our app
+is available under some subdomain. Unfortunately that doesn&#8217;t work and we have to access it via the public DNS and its
+public port.</p>
+
+<p>To see the port of our app connect to the server via SSH and run <code>sudo docker ps</code>. You should see one running process
+and at the very right you&#8217;ll see the public port of our app.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/20_sudo_docker_ps.png" title="Sudo Docker PS" ></p>
+
+<p>You might remember from the beginning where we talked about the security groups and how we will get back to this topic later
+on. Well that moment is now. In order to access the instance from the web you&#8217;ll have to open the port the app is running on.
+In the AWS console click on &#8220;Security Groups&#8221; on the left side and select the one we used for our instance. In my case it
+was &#8220;launch-wizard-1&#8221;. At the bottom click on &#8220;Inbound&#8221; and enter your port in &#8220;Port range&#8221;. For me it was port 49153. Click
+on &#8220;Add Rule&#8221; and &#8220;Apply Rule Changes&#8221; to save the settings.</p>
+
+<p>Now copy the public DNS of your server and afterwards the port of your app to the browser&#8217;s address bar and see the Express app
+running. Yeah!</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/22_express_app_running_on_aws_ec2_instance.png" title="Express app running on AWS EC2 instance" ></p>
+
+<h3>Conclusion</h3>
+
+<p>We now have a server running our app in an isolated Docker image. Through SSH we have complete control over the app
+and we can install any additional packages we want. Using Docker we can easily create more apps on the same server without
+interfering with running processes. At the same time we are able to deploy new code as easy as <code>git push aws master</code>
+and see the changes live within a short amount of time. Dokku and Docker are under heavy development but it&#8217;s definetely worth
+to check them out. They really make live easier. Big thumbs up for the creators and the community helping with the
+development.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/github-like-signup-form-with-angularjs-and-bootstrap-v3/">GitHub Like Signup Form With AngularJS and Bootstrap V3</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-21T22:37:00+02:00" pubdate data-updated="true">Aug 21<span>st</span>, 2013</time>
+        
+         | <a href="/github-like-signup-form-with-angularjs-and-bootstrap-v3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Building a modern and clean signup form still requires more coding than one might think. <a href="https://github.com/">GitHub</a>
+has a simple signup form that I really like. Just three input fields (username, email and password) and you are ready
+to go.</p>
+
+<p>In this post we will build a fully featured copy of this signup form. AngularJS manages our frontend and a small Express.js
+app takes care of our backend. As an extra gimmick I added password verification to make sure that our users don&#8217;t
+ have typos in their passwords. In the end we have some validation in the frontend and also in our backend. Take a look
+ at the <a href="http://mysterious-escarpment-9591.herokuapp.com/signup">final app</a>. If everything was correct you should see a json object with your username, email and the hashed password
+ in addition to some extra information. I also uploaded the whole code to GitHub <a href="https://github.com/zeMirco/ng-signup-form">ng-signup-form</a>.</p>
+
+<h3>The layout</h3>
+
+<p>We use the brand new <a href="http://getbootstrap.com/">Bootstrap v3</a> to build our page. Inside a panel component we have a form with
+four input fields. The first one is for username, the second one for email and the last two ones are for password and
+ password verification.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/signup-form-layout.png" title="Signup form built on top of Bootstrap v3" ></p>
+
+<h3>Backend with Express.js</h3>
+
+<p>Our backend consists of only three routes: <code>GET /signup</code>, <code>POST /signup</code> and <code>POST /signup/check/username</code>. Our main route <code>/</code> redirects
+directly to <code>/signup</code> so when you open the page the signup form is immediately shown.</p>
+
+<p>The code for the first route <code>GET /signup</code> looks like the following.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/signup&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;signup&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It simply takes our <code>signup.jade</code> template and renders it. Our second route <code>POST /signup</code> is the target for the signup form. Let&#8217;s go through the code step by step.
+First of all we get the values of the input fields from the request object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">username</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">username</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">email</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">email</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">password</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">password</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">verification</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">verification</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Afterwards we perform some input validation, check for duplicate username, create a salt and hashed password
+and at the end send a response back to the user. Whenever we encounter invalid data we rerender the
+<code>signup.jade</code> template with an additional error message to tell the user what went wrong. Let&#8217;s start with some input validation.</p>
+
+<h4>1. Input validation on the backend</h4>
+
+<p>Although our submit button is disabled as long as we don&#8217;t have valid values in our input fields, some clever
+people will be able to send invalid data to our backend. That&#8217;s why we have to double check the incoming data
+on the server. We have to make sure that none of the fields are empty, the username doesn&#8217;t contain any
+non-url-safe characters, email value is a valid email address and finally that the provided password matches
+the verification.</p>
+
+<p>All in all the code looks like this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">error</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// regexp from https://github.com/angular/angular.js/blob/master/src/ng/directive/input.js#L4</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">EMAIL_REGEXP</span> <span class="o">=</span> <span class="sr">/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}$/</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// check for valid inputs</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">username</span> <span class="o">||</span> <span class="o">!</span><span class="nx">email</span> <span class="o">||</span> <span class="o">!</span><span class="nx">password</span> <span class="o">||</span> <span class="o">!</span><span class="nx">verification</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">error</span> <span class="o">=</span> <span class="s1">&#39;All fields are required&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">username</span> <span class="o">!==</span> <span class="nb">encodeURIComponent</span><span class="p">(</span><span class="nx">username</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">error</span> <span class="o">=</span> <span class="s1">&#39;Username may not contain any non-url-safe characters&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">email</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="nx">EMAIL_REGEXP</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">error</span> <span class="o">=</span> <span class="s1">&#39;Email is invalid&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">password</span> <span class="o">!==</span> <span class="nx">verification</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">error</span> <span class="o">=</span> <span class="s1">&#39;Passwords don\&#39;t match&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">403</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">response</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;signup&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">error</span><span class="o">:</span> <span class="nx">error</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>2. Check for duplicate username</h4>
+
+<p>In a real world app you would query your database to check for duplicate usernames. In this example
+I&#8217;m using an in-memory array with json data as dummy database. We simply loop through the array to see
+if an entry with the requested username already exists.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// dummy db</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">dummyDb</span> <span class="o">=</span> <span class="p">[</span>
+</span><span class='line'>  <span class="p">{</span><span class="nx">username</span><span class="o">:</span> <span class="s1">&#39;john&#39;</span><span class="p">,</span> <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;john@email.com&#39;</span><span class="p">},</span>
+</span><span class='line'>  <span class="p">{</span><span class="nx">username</span><span class="o">:</span> <span class="s1">&#39;jack&#39;</span><span class="p">,</span> <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;jack@email.com&#39;</span><span class="p">},</span>
+</span><span class='line'>  <span class="p">{</span><span class="nx">username</span><span class="o">:</span> <span class="s1">&#39;jim&#39;</span><span class="p">,</span> <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;jim@email.com&#39;</span><span class="p">},</span>
+</span><span class='line'><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// check if username is already taken</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">dummyDb</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">dummyDb</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">username</span> <span class="o">===</span> <span class="nx">username</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">response</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">403</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">response</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;signup&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">error</span><span class="o">:</span> <span class="s1">&#39;Username is already taken&#39;</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pro tip: Never do the same for duplicate email addresses. Read more about this topic in Troy Hunt&#8217;s excellent
+post <a href="http://www.troyhunt.com/2012/05/everything-you-ever-wanted-to-know.html">Everything you ever wanted to know about building a secure password reset feature</a>.</p>
+
+<h4>3. Create salt and hash password</h4>
+
+<p>Just for completeness and demonstration purpose I included a small function to create a random salt and hash the provided
+password. It might help beginners and reminds everyone never to save passwords in plain text to your db.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// create salt and hash password</span>
+</span><span class='line'><span class="nx">pass</span><span class="p">.</span><span class="nx">hash</span><span class="p">(</span><span class="nx">password</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">salt</span><span class="p">,</span> <span class="nx">hash</span><span class="p">){</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// yeah we have a new user</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">user</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">username</span><span class="o">:</span> <span class="nx">username</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">email</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">salt</span><span class="o">:</span> <span class="nx">salt</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">hash</span><span class="o">:</span> <span class="nx">hash</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">createdAt</span><span class="o">:</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// for fully featured example check duplicate email, send verification link and save user to db</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="nx">user</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I used <a href="https://github.com/visionmedia/node-pwd">pwd</a> to generate the salt and hash the password. You need to include the <a href="https://github.com/visionmedia/node-pwd/pull/3/files">pull request</a>
+from jlubawy to make this work for node v0.10 and above. An alternative is <a href="https://github.com/ncb000gt/node.bcrypt.js/">bcrypt</a>.</p>
+
+<p>That&#8217;s it. We&#8217;re are almost done with our backend. I will explain the third route <code>POST /signup/check/username</code> in the section
+<strong>Custom validators</strong>.</p>
+
+<h3>Form validation with AngularJS</h3>
+
+<p>A good starting point for form validation with AngularJS is the section in the guide <a href="http://docs.angularjs.org/guide/forms">about forms</a>.
+First of all you might want to tell the browser not to validate your form since we&#8217;d like to use AngularJS for that. Simply add <code>novalidate</code>
+as an attribute to your form.</p>
+
+<p>In our example we use two of the built in validators namely <code>required</code> and <code>email</code>. <code>required</code> makes sure you really enter some content
+into the input fields and <code>email</code> uses a regular expression to verify a correct format of the email address. To show error message whenever one
+of those validators returns an error we use Bootstrap&#8217;s <code>.help-block</code> class in conjunction with the <code>ngShow</code> directive.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">span</span><span class="p">.</span><span class="nx">help</span><span class="o">-</span><span class="nx">block</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">show</span><span class="o">=</span><span class="s2">&quot;form.username.$dirty &amp;&amp; form.username.$error.required&quot;</span><span class="p">)</span> <span class="nx">Please</span> <span class="nx">choose</span> <span class="nx">a</span> <span class="nx">username</span>
+</span><span class='line'><span class="nx">span</span><span class="p">.</span><span class="nx">help</span><span class="o">-</span><span class="nx">block</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">show</span><span class="o">=</span><span class="s2">&quot;form.email.$dirty &amp;&amp; form.email.$error.email&quot;</span><span class="p">)</span> <span class="nx">Email</span> <span class="nx">is</span> <span class="nx">invalid</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You might wonder what <code>$dirty</code> is doing in our code. Every form and every form element in the AngularJS world has two states: <code>$pristine</code> and
+<code>$dirty</code>. Your form gets the <code>$pristine</code> state on initial page load before you start entering text into the input fields. So before touching your form it is <code>$pristine</code>. As soon as you start
+entering values the forms loses this state and gets the <code>$dirty</code> state because you started working with it. AngularJS also provides CSS classes
+to allow for different styling of these states <code>.ng-pristine</code> and <code>.ng-dirty</code>. Read more about that topic in the AngularJS docs about <a href="http://docs.angularjs.org/api/ng.directive:form.FormController">FormController</a>.
+If we used the same code as above but without <code>form.username.$dirty</code> and <code>form.email.$dirty</code> the span blocks would be visible on page load.</p>
+
+<h4>Custom validators</h4>
+
+<p>Our first custom validator sends a <code>POST</code> request to the server to check if the username is already taken. We will use a similar
+structure as GitHub does. They send a request to <code>/signup_check/username</code> and if the username is already taken they respond with
+a status of 403 and the message <code>Username already taken</code>. The same goes for usernames that contain invalid characters.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/github-dev-tools-headers.png" title="Chrome dev tools showing request and response headers" ></p>
+
+<p>Here is the code of our Express app.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/signup/check/username&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">username</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">username</span><span class="p">;</span>
+</span><span class='line'>  <span class="c1">// check if username contains non-url-safe characters</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">username</span> <span class="o">!==</span> <span class="nb">encodeURIComponent</span><span class="p">(</span><span class="nx">username</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="mi">403</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">invalidChars</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>    <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// check if username is already taken - query your db here</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">usernameTaken</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">dummyDb</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">dummyDb</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">username</span> <span class="o">===</span> <span class="nx">username</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">usernameTaken</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">usernameTaken</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="mi">403</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">isTaken</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>    <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// looks like everything is fine</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We first check for non-url-safe characters and afterwards if the username is already taken. If one of those is the case
+we send status 403 and some json data back to the client to tell it what went wrong. If everything is fine we simply send
+a status of 200 without any data.</p>
+
+<p>On the client side we build a custom directive called <code>unique-username</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">directive</span><span class="p">(</span><span class="s1">&#39;uniqueUsername&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;$http&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$http</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">require</span><span class="o">:</span> <span class="s1">&#39;ngModel&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">link</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">scope</span><span class="p">,</span> <span class="nx">elem</span><span class="p">,</span> <span class="nx">attrs</span><span class="p">,</span> <span class="nx">ctrl</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">scope</span><span class="p">.</span><span class="nx">busy</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>      <span class="nx">scope</span><span class="p">.</span><span class="nx">$watch</span><span class="p">(</span><span class="nx">attrs</span><span class="p">.</span><span class="nx">ngModel</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// hide old error messages</span>
+</span><span class='line'>        <span class="nx">ctrl</span><span class="p">.</span><span class="nx">$setValidity</span><span class="p">(</span><span class="s1">&#39;isTaken&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>        <span class="nx">ctrl</span><span class="p">.</span><span class="nx">$setValidity</span><span class="p">(</span><span class="s1">&#39;invalidChars&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="c1">// don&#39;t send undefined to the server during dirty check</span>
+</span><span class='line'>          <span class="c1">// empty username is caught by required directive</span>
+</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// show spinner</span>
+</span><span class='line'>        <span class="nx">scope</span><span class="p">.</span><span class="nx">busy</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// send request to server</span>
+</span><span class='line'>        <span class="nx">$http</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/signup/check/username&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">username</span><span class="o">:</span> <span class="nx">value</span><span class="p">})</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">success</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// everything is fine -&gt; do nothing</span>
+</span><span class='line'>            <span class="nx">scope</span><span class="p">.</span><span class="nx">busy</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// display new error message</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">isTaken</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">ctrl</span><span class="p">.</span><span class="nx">$setValidity</span><span class="p">(</span><span class="s1">&#39;isTaken&#39;</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">invalidChars</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">ctrl</span><span class="p">.</span><span class="nx">$setValidity</span><span class="p">(</span><span class="s1">&#39;invalidChars&#39;</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="nx">scope</span><span class="p">.</span><span class="nx">busy</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+</span><span class='line'>          <span class="p">});</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can use this directive in the same way we did before with <code>required</code> and <code>email</code> validators.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">span</span><span class="p">.</span><span class="nx">help</span><span class="o">-</span><span class="nx">block</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">show</span><span class="o">=</span><span class="s2">&quot;form.username.$dirty &amp;&amp; form.username.$error.isTaken&quot;</span><span class="p">)</span> <span class="nx">Username</span> <span class="nx">already</span> <span class="nx">taken</span>
+</span><span class='line'><span class="nx">span</span><span class="p">.</span><span class="nx">help</span><span class="o">-</span><span class="nx">block</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">show</span><span class="o">=</span><span class="s2">&quot;form.username.$dirty &amp;&amp; form.username.$error.invalidChars&quot;</span><span class="p">)</span> <span class="nx">Username</span> <span class="nx">may</span> <span class="nx">not</span> <span class="nx">contain</span> <span class="nx">any</span> <span class="nx">non</span><span class="o">-</span><span class="nx">url</span><span class="o">-</span><span class="nx">safe</span> <span class="nx">characters</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>uniqueUsername</code> directive also shows a spinner while talking to the server. Through <code>ng-show="busy"</code> we can hide and show the spinner.
+The icon is taken from the Glyphicons that come with Bootstrap and some CSS makes it spin.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="k">@-webkit-keyframes</span> <span class="nt">rotating</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nt">from</span> <span class="p">{</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">webkit</span><span class="o">-</span><span class="n">transform</span><span class="o">:</span> <span class="n">rotate</span><span class="p">(</span><span class="m">0</span><span class="n">deg</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nt">to</span> <span class="p">{</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">webkit</span><span class="o">-</span><span class="n">transform</span><span class="o">:</span> <span class="n">rotate</span><span class="p">(</span><span class="m">360</span><span class="n">deg</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nc">.rotating</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">float</span><span class="o">:</span> <span class="k">right</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">position</span><span class="o">:</span> <span class="k">relative</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">top</span><span class="o">:</span> <span class="m">-24px</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">right</span><span class="o">:</span> <span class="m">10px</span><span class="p">;</span>
+</span><span class='line'>  <span class="o">-</span><span class="n">webkit</span><span class="o">-</span><span class="n">animation</span><span class="o">:</span> <span class="n">rotating</span> <span class="m">1s</span> <span class="n">linear</span> <span class="n">infinite</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Our second custom form validation method checks whether the password and the password verification input fields have exactly the
+same values. Again we use a custom directive for that.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">directive</span><span class="p">(</span><span class="s1">&#39;match&#39;</span><span class="p">,</span> <span class="p">[</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">require</span><span class="o">:</span> <span class="s1">&#39;ngModel&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">link</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">scope</span><span class="p">,</span> <span class="nx">elem</span><span class="p">,</span> <span class="nx">attrs</span><span class="p">,</span> <span class="nx">ctrl</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">scope</span><span class="p">.</span><span class="nx">$watch</span><span class="p">(</span><span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="nx">attrs</span><span class="p">.</span><span class="nx">ngModel</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">attrs</span><span class="p">.</span><span class="nx">match</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">){</span>
+</span><span class='line'>        <span class="nx">ctrl</span><span class="p">.</span><span class="nx">$setValidity</span><span class="p">(</span><span class="s1">&#39;match&#39;</span><span class="p">,</span> <span class="nx">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">===</span> <span class="nx">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">);</span>
+</span><span class='line'>      <span class="p">},</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To use this directive apply it to the password input field as well as the verification input field.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">input</span><span class="p">.</span><span class="nx">form</span><span class="o">-</span><span class="nx">control</span><span class="p">(</span><span class="nx">type</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="nx">id</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="nx">ng</span><span class="o">-</span><span class="nx">model</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="nx">required</span><span class="p">,</span> <span class="nx">match</span><span class="o">=</span><span class="s2">&quot;verification&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="nx">input</span><span class="p">.</span><span class="nx">form</span><span class="o">-</span><span class="nx">control</span><span class="p">(</span><span class="nx">type</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;verification&quot;</span><span class="p">,</span> <span class="nx">id</span><span class="o">=</span><span class="s2">&quot;verification&quot;</span><span class="p">,</span> <span class="nx">ng</span><span class="o">-</span><span class="nx">model</span><span class="o">=</span><span class="s2">&quot;verification&quot;</span><span class="p">,</span> <span class="nx">required</span><span class="p">,</span> <span class="nx">match</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The error message works as expected but only show it when the verification input fields contains a value.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">span</span><span class="p">.</span><span class="nx">help</span><span class="o">-</span><span class="nx">block</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">show</span><span class="o">=</span><span class="s2">&quot;form.verification.$dirty &amp;&amp; form.verification.$error.match &amp;&amp; !form.verification.$error.required&quot;</span><span class="p">)</span> <span class="nx">Passwords</span> <span class="nx">don</span><span class="err">&#39;</span><span class="nx">t</span> <span class="nx">match</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Last but not least we keep the submit button disabled as long as our form contains validation errors.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">input</span><span class="p">.</span><span class="nx">btn</span><span class="p">.</span><span class="nx">btn</span><span class="o">-</span><span class="nx">primary</span><span class="p">(</span><span class="nx">type</span><span class="o">=</span><span class="s2">&quot;submit&quot;</span><span class="p">,</span> <span class="nx">value</span><span class="o">=</span><span class="s2">&quot;Sign up&quot;</span><span class="p">,</span> <span class="nx">ng</span><span class="o">-</span><span class="nx">disabled</span><span class="o">=</span><span class="s2">&quot;form.$invalid&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Conclusion</h3>
+
+<p>We&#8217;ve built a signup form very similar to the one GitHub uses with an Express.js backend and AngularJS
+on the frontend. In addition to the form validators already provided by AngularJS we&#8217;ve implemented two
+custom form validators for unique usernames and password verification. Take a look at the final <a href="http://mysterious-escarpment-9591.herokuapp.com/signup">app</a>. Try usernames like
+<strong>john</strong>, <strong>jack</strong> and <strong>jim</strong>.</p>
+
+<p>One thing I couldn&#8217;t achieve is sending invalid usernames and emails back from the server to the client.
+So that the input fields already contain the false information and the user just has to correct them. That
+doesn&#8217;t work because AngularJS doesn&#8217;t allow an invalid email inside an input field of type <code>email</code>. To
+better understand the problem take a look at a quick <a href="http://plnkr.co/edit/XzcCA7?p=preview">example</a>. If you&#8217;ve got an idea how to solve this problem
+please feel free to comment below or provide an answer to my question at <a href="http://stackoverflow.com/questions/18217916/how-to-init-invalid-email-and-show-in-inputtype-email">stackoverflow</a>. Thank you!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -3278,57 +3988,9 @@ one less request to the server.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog-init/">Blog Init</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-04-12T00:00:00+02:00" pubdate data-updated="true">Apr 12<span>th</span>, 2013</time>
-        
-         | <a href="/blog-init/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I&#8217;ve been playing with the idea for some time and today I finally start my own blog.</p>
-
-<p>You&#8217;ll read about JavaScript, web technologies and solutions I came across developing web applications.</p>
-
-<p> The blog is powered by <a href="http://octopress.org/">Octopress</a> and
- hosted on <a href="http://pages.github.com/">GitHub pages</a>. You can find the repo at
- <a href="https://github.com/zeMirco/zemirco.github.io">zemirco.github.io</a>. I got the domain
- <a href="http://www.mircozeiss.com">mircozeiss.com</a> from <a href="http://www.hetzner.de/en/">Hetzner</a> and, being
- a developer and not a designer, I&#8217;m very thankful for <a href="http://lucaslew.com/">Lucas Lew</a> who
- created the <a href="https://github.com/lucaslew/whitespace">whitespace</a> theme.</p>
-
-<p>If you&#8217;ve got some ideas for improvements send me an email to
-<a href="mailto:mirco.zeiss@gmail.com">mirco.zeiss@gmail.com</a> or write something below.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/page/2/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -3341,6 +4003,14 @@ one less request to the server.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/">Dokku in-depth tutorial - Your private PaaS on Amazon EC2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/github-like-signup-form-with-angularjs-and-bootstrap-v3/">GitHub like signup form with AngularJS and Bootstrap v3</a>
+      </li>
+    
+      <li class="post">
         <a href="/sync-multiple-angularjs-apps-without-server-via-pouchdb/">Sync multiple AngularJS apps without server via PouchDB</a>
       </li>
     
@@ -3350,14 +4020,6 @@ one less request to the server.</p>
     
       <li class="post">
         <a href="/building-offline-applications-with-angularjs-and-pouchdb/">Building offline applications with AngularJS and PouchDB</a>
-      </li>
-    
-      <li class="post">
-        <a href="/using-csrf-with-express-and-angular/">Using CSRF protection with Express and Angular</a>
-      </li>
-    
-      <li class="post">
-        <a href="/not-using-email-as-the-primary-key-with-mozilla-persona/">Not using email as the primary key with Mozilla Persona</a>
       </li>
     
   </ul>

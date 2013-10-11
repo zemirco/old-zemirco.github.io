@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Bootstrap | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/categories/bootstrap/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-10-11T21:04:54+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[GitHub like signup form with AngularJS and Bootstrap v3]]></title>
+    <link href="http://mircozeiss.com/github-like-signup-form-with-angularjs-and-bootstrap-v3/"/>
+    <updated>2013-08-21T22:37:00+02:00</updated>
+    <id>http://mircozeiss.com/github-like-signup-form-with-angularjs-and-bootstrap-v3</id>
+    <content type="html"><![CDATA[<p>Building a modern and clean signup form still requires more coding than one might think. <a href="https://github.com/">GitHub</a>
+has a simple signup form that I really like. Just three input fields (username, email and password) and you are ready
+to go.</p>
+
+<p>In this post we will build a fully featured copy of this signup form. AngularJS manages our frontend and a small Express.js
+app takes care of our backend. As an extra gimmick I added password verification to make sure that our users don't
+ have typos in their passwords. In the end we have some validation in the frontend and also in our backend. Take a look
+ at the <a href="http://mysterious-escarpment-9591.herokuapp.com/signup">final app</a>. If everything was correct you should see a json object with your username, email and the hashed password
+ in addition to some extra information. I also uploaded the whole code to GitHub <a href="https://github.com/zeMirco/ng-signup-form">ng-signup-form</a>.</p>
+
+<h3>The layout</h3>
+
+<p>We use the brand new <a href="http://getbootstrap.com/">Bootstrap v3</a> to build our page. Inside a panel component we have a form with
+four input fields. The first one is for username, the second one for email and the last two ones are for password and
+ password verification.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/signup-form-layout.png" title="Signup form built on top of Bootstrap v3" ></p>
+
+<h3>Backend with Express.js</h3>
+
+<p>Our backend consists of only three routes: <code>GET /signup</code>, <code>POST /signup</code> and <code>POST /signup/check/username</code>. Our main route <code>/</code> redirects
+directly to <code>/signup</code> so when you open the page the signup form is immediately shown.</p>
+
+<p>The code for the first route <code>GET /signup</code> looks like the following.</p>
+
+<p><code>js
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+</code></p>
+
+<p>It simply takes our <code>signup.jade</code> template and renders it. Our second route <code>POST /signup</code> is the target for the signup form. Let's go through the code step by step.
+First of all we get the values of the input fields from the request object.</p>
+
+<p><code>js
+var username = req.body.username;
+var email = req.body.email;
+var password = req.body.password;
+var verification = req.body.verification;
+</code></p>
+
+<p>Afterwards we perform some input validation, check for duplicate username, create a salt and hashed password
+and at the end send a response back to the user. Whenever we encounter invalid data we rerender the
+<code>signup.jade</code> template with an additional error message to tell the user what went wrong. Let's start with some input validation.</p>
+
+<h4>1. Input validation on the backend</h4>
+
+<p>Although our submit button is disabled as long as we don't have valid values in our input fields, some clever
+people will be able to send invalid data to our backend. That's why we have to double check the incoming data
+on the server. We have to make sure that none of the fields are empty, the username doesn't contain any
+non-url-safe characters, email value is a valid email address and finally that the provided password matches
+the verification.</p>
+
+<p>All in all the code looks like this.</p>
+
+<p>```js
+var error = null;
+// regexp from https://github.com/angular/angular.js/blob/master/src/ng/directive/input.js#L4
+var EMAIL_REGEXP = /<sup>[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+.[A-Za-z]{2,6}$/;</sup></p>
+
+<p>// check for valid inputs
+if (!username || !email || !password || !verification) {
+  error = 'All fields are required';
+} else if (username !== encodeURIComponent(username)) {
+  error = 'Username may not contain any non-url-safe characters';
+} else if (!email.match(EMAIL_REGEXP)) {
+  error = 'Email is invalid';
+} else if (password !== verification) {
+  error = 'Passwords don\'t match';
+}</p>
+
+<p>if (error) {
+  response.status(403);
+  response.render('signup', {</p>
+
+<pre><code>error: error
+</code></pre>
+
+<p>  });
+  return
+}
+```</p>
+
+<h4>2. Check for duplicate username</h4>
+
+<p>In a real world app you would query your database to check for duplicate usernames. In this example
+I'm using an in-memory array with json data as dummy database. We simply loop through the array to see
+if an entry with the requested username already exists.</p>
+
+<p>```js
+// dummy db
+var dummyDb = [
+  {username: 'john', email: 'john@email.com'},
+  {username: 'jack', email: 'jack@email.com'},
+  {username: 'jim', email: 'jim@email.com'},
+];</p>
+
+<p>// check if username is already taken
+for (var i = 0; i &lt; dummyDb.length; i++) {
+  if (dummyDb[i].username === username) {</p>
+
+<pre><code>response.status(403);
+response.render('signup', {
+  error: 'Username is already taken'
+});
+return;
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p>Pro tip: Never do the same for duplicate email addresses. Read more about this topic in Troy Hunt's excellent
+post <a href="http://www.troyhunt.com/2012/05/everything-you-ever-wanted-to-know.html">Everything you ever wanted to know about building a secure password reset feature</a>.</p>
+
+<h4>3. Create salt and hash password</h4>
+
+<p>Just for completeness and demonstration purpose I included a small function to create a random salt and hash the provided
+password. It might help beginners and reminds everyone never to save passwords in plain text to your db.</p>
+
+<p>```js
+// create salt and hash password
+pass.hash(password, function(err, salt, hash){
+  if (err) console.log(err);</p>
+
+<p>  // yeah we have a new user
+  var user = {</p>
+
+<pre><code>username: username,
+email: email,
+salt: salt,
+hash: hash,
+createdAt: Date.now()
+</code></pre>
+
+<p>  };</p>
+
+<p>  // for fully featured example check duplicate email, send verification link and save user to db</p>
+
+<p>  response.json(200, user)</p>
+
+<p>});
+```</p>
+
+<p>I used <a href="https://github.com/visionmedia/node-pwd">pwd</a> to generate the salt and hash the password. You need to include the <a href="https://github.com/visionmedia/node-pwd/pull/3/files">pull request</a>
+from jlubawy to make this work for node v0.10 and above. An alternative is <a href="https://github.com/ncb000gt/node.bcrypt.js/">bcrypt</a>.</p>
+
+<p>That's it. We're are almost done with our backend. I will explain the third route <code>POST /signup/check/username</code> in the section
+<strong>Custom validators</strong>.</p>
+
+<h3>Form validation with AngularJS</h3>
+
+<p>A good starting point for form validation with AngularJS is the section in the guide <a href="http://docs.angularjs.org/guide/forms">about forms</a>.
+First of all you might want to tell the browser not to validate your form since we'd like to use AngularJS for that. Simply add <code>novalidate</code>
+as an attribute to your form.</p>
+
+<p>In our example we use two of the built in validators namely <code>required</code> and <code>email</code>. <code>required</code> makes sure you really enter some content
+into the input fields and <code>email</code> uses a regular expression to verify a correct format of the email address. To show error message whenever one
+of those validators returns an error we use Bootstrap's <code>.help-block</code> class in conjunction with the <code>ngShow</code> directive.</p>
+
+<p><code>
+span.help-block(ng-show="form.username.$dirty &amp;&amp; form.username.$error.required") Please choose a username
+span.help-block(ng-show="form.email.$dirty &amp;&amp; form.email.$error.email") Email is invalid
+</code></p>
+
+<p>You might wonder what <code>$dirty</code> is doing in our code. Every form and every form element in the AngularJS world has two states: <code>$pristine</code> and
+<code>$dirty</code>. Your form gets the <code>$pristine</code> state on initial page load before you start entering text into the input fields. So before touching your form it is <code>$pristine</code>. As soon as you start
+entering values the forms loses this state and gets the <code>$dirty</code> state because you started working with it. AngularJS also provides CSS classes
+to allow for different styling of these states <code>.ng-pristine</code> and <code>.ng-dirty</code>. Read more about that topic in the AngularJS docs about <a href="http://docs.angularjs.org/api/ng.directive:form.FormController">FormController</a>.
+If we used the same code as above but without <code>form.username.$dirty</code> and <code>form.email.$dirty</code> the span blocks would be visible on page load.</p>
+
+<h4>Custom validators</h4>
+
+<p>Our first custom validator sends a <code>POST</code> request to the server to check if the username is already taken. We will use a similar
+structure as GitHub does. They send a request to <code>/signup_check/username</code> and if the username is already taken they respond with
+a status of 403 and the message <code>Username already taken</code>. The same goes for usernames that contain invalid characters.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/github-dev-tools-headers.png" title="Chrome dev tools showing request and response headers" ></p>
+
+<p>Here is the code of our Express app.</p>
+
+<p>```js
+app.post('/signup/check/username', function(req, res) {
+  var username = req.body.username;
+  // check if username contains non-url-safe characters
+  if (username !== encodeURIComponent(username)) {</p>
+
+<pre><code>res.json(403, {
+  invalidChars: true
+});
+return;
+</code></pre>
+
+<p>  }
+  // check if username is already taken - query your db here
+  var usernameTaken = false;
+  for (var i = 0; i &lt; dummyDb.length; i++) {</p>
+
+<pre><code>if (dummyDb[i].username === username) {
+  usernameTaken = true;
+  break;
+}
+</code></pre>
+
+<p>  }
+  if (usernameTaken) {</p>
+
+<pre><code>res.json(403, {
+  isTaken: true
+});
+return
+</code></pre>
+
+<p>  }
+  // looks like everything is fine
+  res.send(200);
+});
+```</p>
+
+<p>We first check for non-url-safe characters and afterwards if the username is already taken. If one of those is the case
+we send status 403 and some json data back to the client to tell it what went wrong. If everything is fine we simply send
+a status of 200 without any data.</p>
+
+<p>On the client side we build a custom directive called <code>unique-username</code>.</p>
+
+<p>```js
+app.directive('uniqueUsername', ['$http', function($http) {<br/>
+  return {</p>
+
+<pre><code>require: 'ngModel',
+link: function(scope, elem, attrs, ctrl) {
+  scope.busy = false;
+  scope.$watch(attrs.ngModel, function(value) {
+
+    // hide old error messages
+    ctrl.$setValidity('isTaken', true);
+    ctrl.$setValidity('invalidChars', true);
+
+    if (!value) {
+      // don't send undefined to the server during dirty check
+      // empty username is caught by required directive
+      return;
+    }
+
+    // show spinner
+    scope.busy = true;
+
+    // send request to server
+    $http.post('/signup/check/username', {username: value})
+      .success(function(data) {
+        // everything is fine -&gt; do nothing
+        scope.busy = false;
+      })
+      .error(function(data) {
+
+        // display new error message
+        if (data.isTaken) {
+          ctrl.$setValidity('isTaken', false);
+        } else if (data.invalidChars) {
+          ctrl.$setValidity('invalidChars', false);
+        }
+
+        scope.busy = false;
+      });
+  })
+}
+</code></pre>
+
+<p>  }
+}]);
+```</p>
+
+<p>We can use this directive in the same way we did before with <code>required</code> and <code>email</code> validators.</p>
+
+<p><code>js
+span.help-block(ng-show="form.username.$dirty &amp;&amp; form.username.$error.isTaken") Username already taken
+span.help-block(ng-show="form.username.$dirty &amp;&amp; form.username.$error.invalidChars") Username may not contain any non-url-safe characters
+</code></p>
+
+<p>The <code>uniqueUsername</code> directive also shows a spinner while talking to the server. Through <code>ng-show="busy"</code> we can hide and show the spinner.
+The icon is taken from the Glyphicons that come with Bootstrap and some CSS makes it spin.</p>
+
+<p>```css
+@-webkit-keyframes rotating {
+  from {</p>
+
+<pre><code>-webkit-transform: rotate(0deg);
+</code></pre>
+
+<p>  }
+  to {</p>
+
+<pre><code>-webkit-transform: rotate(360deg);
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>.rotating {
+  float: right;
+  position: relative;
+  top: -24px;
+  right: 10px;
+  -webkit-animation: rotating 1s linear infinite;
+}
+```</p>
+
+<p>Our second custom form validation method checks whether the password and the password verification input fields have exactly the
+same values. Again we use a custom directive for that.</p>
+
+<p>```js
+app.directive('match', [function () {
+  return {</p>
+
+<pre><code>require: 'ngModel',
+link: function (scope, elem, attrs, ctrl) {
+
+  scope.$watch('[' + attrs.ngModel + ', ' + attrs.match + ']', function(value){
+    ctrl.$setValidity('match', value[0] === value[1] );
+  }, true);
+
+}
+</code></pre>
+
+<p>  }
+}]);
+```</p>
+
+<p>To use this directive apply it to the password input field as well as the verification input field.</p>
+
+<p><code>
+input.form-control(type="password", name="password", id="password", ng-model="password", required, match="verification")
+input.form-control(type="password", name="verification", id="verification", ng-model="verification", required, match="password")
+</code></p>
+
+<p>The error message works as expected but only show it when the verification input fields contains a value.</p>
+
+<p><code>
+span.help-block(ng-show="form.verification.$dirty &amp;&amp; form.verification.$error.match &amp;&amp; !form.verification.$error.required") Passwords don't match
+</code></p>
+
+<p>Last but not least we keep the submit button disabled as long as our form contains validation errors.</p>
+
+<p><code>
+input.btn.btn-primary(type="submit", value="Sign up", ng-disabled="form.$invalid")
+</code></p>
+
+<h3>Conclusion</h3>
+
+<p>We've built a signup form very similar to the one GitHub uses with an Express.js backend and AngularJS
+on the frontend. In addition to the form validators already provided by AngularJS we've implemented two
+custom form validators for unique usernames and password verification. Take a look at the final <a href="http://mysterious-escarpment-9591.herokuapp.com/signup">app</a>. Try usernames like
+<strong>john</strong>, <strong>jack</strong> and <strong>jim</strong>.</p>
+
+<p>One thing I couldn't achieve is sending invalid usernames and emails back from the server to the client.
+So that the input fields already contain the false information and the user just has to correct them. That
+doesn't work because AngularJS doesn't allow an invalid email inside an input field of type <code>email</code>. To
+better understand the problem take a look at a quick <a href="http://plnkr.co/edit/XzcCA7?p=preview">example</a>. If you've got an idea how to solve this problem
+please feel free to comment below or provide an answer to my question at <a href="http://stackoverflow.com/questions/18217916/how-to-init-invalid-email-and-show-in-inputtype-email">stackoverflow</a>. Thank you!</p>
+]]></content>
+  </entry>
+  
+</feed>

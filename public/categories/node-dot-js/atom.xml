@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Node.js | Mirco Zeiss]]></title>
+  <link href="http://mircozeiss.com/categories/node-dot-js/atom.xml" rel="self"/>
+  <link href="http://mircozeiss.com/"/>
+  <updated>2013-10-11T21:04:54+02:00</updated>
+  <id>http://mircozeiss.com/</id>
+  <author>
+    <name><![CDATA[Mirco Zeiss]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Dokku in-depth tutorial - Your private PaaS on Amazon EC2]]></title>
+    <link href="http://mircozeiss.com/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/"/>
+    <updated>2013-10-10T22:20:00+02:00</updated>
+    <id>http://mircozeiss.com/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2</id>
+    <content type="html"><![CDATA[<p>If you want complete control over your servers and at the same time the simplicity to deploy as easy as
+<code>git push server master</code> <a href="https://github.com/progrium/dokku">Dokku</a> will be your next favorite tool.</p>
+
+<p>In this post I will walk you through the process of installing Dokku on a fresh Amazon EC2 instance running Ubuntu Server
+13.04.</p>
+
+<h3>Set up your Amazon EC2 instance</h3>
+
+<p>Log in to your AWS console and go to EC2. From your dashboard click on "Launch Instance". Under step one "Choose AMI" find
+"Ubuntu Server 13.04" and click on "Select".</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/01_choose_ami.png" title="Ubuntu Server 13.04 instance" ></p>
+
+<p>In step two "Choose Instance Type" select the micro instance. It has enough power for any small prototype and is eligible
+for the AWS free usage tier. If you need more RAM, disk space or CPU you can also select one of the other instances. For
+this post it doesn't matter, as the following steps will be the same.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/02_choose_instance_type.png" title="Choose Instance Type" ></p>
+
+<p>In step three "Configure Instance" I left everything as is.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/03_configure_instance.png" title="Configure Instance" ></p>
+
+<p>The same goes for step four "Add storage". Usually you don't need a lot of storage. For images, videos and other
+files I always use S3.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/04_add_storage.png" title="Add Storage" ></p>
+
+<p>In step five "Tag Instance" give your instance a name. That makes it easier later on to find it in the list of all
+your instances. I chose "Node.js via Dokku".</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/05_tag_instance.png" title="Tag Instance" ></p>
+
+<p>Leave everything as is in step six "Configure Security Group". The wizard will create a new security group for your
+instance. In my case it is called "launch-wizard-1". At the bottom you can see that only port 22 is open for SSH access.
+We will change this later on to access our instance through the web with a browser.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/06_configure_security_group.png" title="Configure Security Group" ></p>
+
+<p>Last but not least check that everything is correct in step seven "Review". Click on "Launch" to start your fresh instance.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/07_review.png" title="Review" ></p>
+
+<p>To connect to this instance via SSH you need to create a key pair (or use an existing one if you have). I named mine
+"dokku" and downloaded the "dokku.pem" file.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/08_key_pair.png" title="Key Pair" ></p>
+
+<p>Et voilà you've created a new instance, downloaded the necessary key pair and after a short amount of time
+you'll see the instance within your list of instances with a green status indicator that says "running". That concludes
+the first section and in the next one we will connect to the instance and install Dokku.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/10_instance_screenshot.png" title="Instance Screenshot" ></p>
+
+<h3>Install Dokku</h3>
+
+<p>First of all connect to your server via SSH. I'll simply use the terminal but you can use any tool you want. Select
+the "Node.js via Dokku" instance from the list and on top of the page click on "Connect". A popup window will open
+with further instructions.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/11_connect_to_instance.png" title="Connect To Your Instance" ></p>
+
+<p>At the top "A standalone SSH client" should be selected. Open your terminal and change the working directory to the folder
+where you put the previously downloaded "docker.pem" file. Then run <code>chmod 400 dokku.pem</code> to change the permissions for your
+key pair. Afterwards copy the line under "Example" and paste it into your terminal. Don't worry about the message that the
+authenticity cannot be established. Simply answer the prompt with "yes" and press enter.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/12_RSA_fingerprint.png" title="RSA fingerprint" ></p>
+
+<p>Afterwards you should see a welcome message from your Ubuntu server.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/13_connected_to_server.png" title="Server success message" ></p>
+
+<p>Now that you are connected to your server we can install Dokku. Follow the instructions from the <a href="https://github.com/progrium/dokku#installing">GitHub page</a>.
+Run <code>wget -qO- https://raw.github.com/progrium/dokku/master/bootstrap.sh | sudo bash</code>. That will install all the necessary tools needed to run Dokku.
+The whole process will take about five minutes and at the end you will see a message that asks you to copy
+your public key to the server.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/14_dokku_installed.png" title="Dokku installed" ></p>
+
+<p>Make sure you replace <code>root@ip-10-228-95-82</code> with the username and address you've used before to connect to your server.
+Then you have to run <code>gitreceive upload-key progrium</code> as an admin with <code>sudo</code>. It doesn't say it in the success message
+but on GitHub under <a href="https://github.com/progrium/dokku#configuring">Configuring</a> it is stated. Finally you can replace
+<code>progrium</code> with any username you want. It will be the username that is used by git. I simply chose <code>dokku</code>.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/15_copy_ssh_key.png" title="Copy SSH Key" ></p>
+
+<p>The last step to make Dokku work is to create a <code>VHOST</code> file in <code>/home/git/</code>. On your server change the directory to <code>/home/git/</code>
+and run <code>sudo touch VHOST</code> to create the file and <code>sudo nano VHOST</code> to open the file with the nano editor. Then paste
+the public DNS of your instance into this file and close it with CTRL+X. Afterwards run <code>cat VHOST</code> to make sure the
+DNS was saved correctly.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/17_setting_vhost.png" title="Setting VHOST" ></p>
+
+<p>That's it! Your server is ready, Dokku is ready and the only thing left is our app.</p>
+
+<h3>Node.js app</h3>
+
+<p>We will simply use the <a href="http://expressjs.com/">Express</a> starter app and run it on our server. In a terminal on your local
+computer run <code>express</code> and <code>npm install</code> to create the app. As Dokku is inspired by <a href="https://www.heroku.com/">Heroku</a> every app
+needs a Procfile to tell our server which commands it should run to start our express app. Usually we run <code>node app.js</code> to start
+our app and therefore we have to write the same into the Procfile. Run <code>touch Procfile</code> to create it,
+<code>echo web: node app.js &gt; Procfile</code> to put the right command into the file and <code>cat Procfile</code> to verify that everything
+worked as expected.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/19_procfile.png" title="Procfile" ></p>
+
+<p>It is also recommended to create a <code>.gitignore</code> file and to put the <code>node_modules/</code> directory inside. We don't have
+to copy this folder to our server as Dokku will run <code>npm install</code> which will install all required modules from our <code>package.json</code>.
+Run <code>touch .gitignore</code> and <code>echo node_modules/ &gt; .gitignore</code> to set up this file.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/16_gitignore.png" title="Gitignore" ></p>
+
+<p>Now you are ready to deploy. Initialize git with <code>git init</code>, add all the files with <code>git add .</code> and write your first
+commit message <code>git commit -m "init"</code>. To deploy the code to our server we have to set the remote target for git. Run
+<code>git remote add [name] git@[DNS]:[appname]</code> to add our remote server. For <code>[name]</code> I chose <code>aws</code>, for <code>[DNS]</code> I copied
+my public DNS from the Amazon EC2 dashboard and as <code>[appname]</code> I selected <code>node-js-example</code>.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/18_git_add_remote.png" title="Git Add Remote" ></p>
+
+<p>Now simply run <code>git push aws master</code> to deploy the app to our server. You will see a success message that says that our app
+is available under some subdomain. Unfortunately that doesn't work and we have to access it via the public DNS and its
+public port.</p>
+
+<p>To see the port of our app connect to the server via SSH and run <code>sudo docker ps</code>. You should see one running process
+and at the very right you'll see the public port of our app.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/20_sudo_docker_ps.png" title="Sudo Docker PS" ></p>
+
+<p>You might remember from the beginning where we talked about the security groups and how we will get back to this topic later
+on. Well that moment is now. In order to access the instance from the web you'll have to open the port the app is running on.
+In the AWS console click on "Security Groups" on the left side and select the one we used for our instance. In my case it
+was "launch-wizard-1". At the bottom click on "Inbound" and enter your port in "Port range". For me it was port 49153. Click
+on "Add Rule" and "Apply Rule Changes" to save the settings.</p>
+
+<p>Now copy the public DNS of your server and afterwards the port of your app to the browser's address bar and see the Express app
+running. Yeah!</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/22_express_app_running_on_aws_ec2_instance.png" title="Express app running on AWS EC2 instance" ></p>
+
+<h3>Conclusion</h3>
+
+<p>We now have a server running our app in an isolated Docker image. Through SSH we have complete control over the app
+and we can install any additional packages we want. Using Docker we can easily create more apps on the same server without
+interfering with running processes. At the same time we are able to deploy new code as easy as <code>git push aws master</code>
+and see the changes live within a short amount of time. Dokku and Docker are under heavy development but it's definetely worth
+to check them out. They really make live easier. Big thumbs up for the creators and the community helping with the
+development.</p>
+]]></content>
+  </entry>
+  
+</feed>
