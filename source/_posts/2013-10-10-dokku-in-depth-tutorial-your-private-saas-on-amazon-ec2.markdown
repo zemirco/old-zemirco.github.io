@@ -141,6 +141,8 @@ In the AWS console click on "Security Groups" on the left side and select the on
 was "launch-wizard-1". At the bottom click on "Inbound" and enter your port in "Port range". For me it was port 49153. Click
 on "Add Rule" and "Apply Rule Changes" to save the settings.
 
+{% img https://s3.amazonaws.com/mircozeiss.com/dokku/21_edit_security_group.png Edit Security Group %}
+
 Now copy the public DNS of your server and afterwards the port of your app to the browser's address bar and see the Express app
 running. Yeah!
 

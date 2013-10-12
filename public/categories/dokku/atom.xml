@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Dokku | Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/categories/dokku/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-10-11T21:04:54+02:00</updated>
+  <updated>2013-10-12T09:08:08+02:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -152,6 +152,8 @@ on. Well that moment is now. In order to access the instance from the web you'll
 In the AWS console click on "Security Groups" on the left side and select the one we used for our instance. In my case it
 was "launch-wizard-1". At the bottom click on "Inbound" and enter your port in "Port range". For me it was port 49153. Click
 on "Add Rule" and "Apply Rule Changes" to save the settings.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/dokku/21_edit_security_group.png" title="Edit Security Group" ></p>
 
 <p>Now copy the public DNS of your server and afterwards the port of your app to the browser's address bar and see the Express app
 running. Yeah!</p>
