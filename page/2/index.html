@@ -9,7 +9,9 @@
   <meta name="author" content="Mirco Zeiss">
 
   
-  <meta name="description" content="I&#8217;ve been playing with the idea for some time and today I finally start my own blog. You&#8217;ll read about JavaScript, web technologies and &hellip;">
+  <meta name="description" content="I came across the problem of sending JavaScript variables from my backend,
+in this case an Express.js server,
+to my frontend, means an Angular.js &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -38,7 +40,9 @@
   <meta name="twitter:creator" content="zeMirco">
   <meta name="twitter:url" content="http://mircozeiss.com/page/2">
   <meta name="twitter:title" content="Mirco Zeiss">
-  <meta name="twitter:description" content="I&#8217;ve been playing with the idea for some time and today I finally start my own blog. You&#8217;ll read about JavaScript, web technologies and solutions I came across developing web applications &hellip;">
+  <meta name="twitter:description" content="I came across the problem of sending JavaScript variables from my backend,
+in this case an Express.js server,
+to my frontend, means an Angular.js controller. I&#8217;m using Jade as my template &hellip;">
 
   
   <script type="text/javascript">
@@ -86,6 +90,532 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/how-to-pass-javascript-variables-from-a-server-to-angular/">How to Pass JavaScript Variables From a Server to Angular.js</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-13T00:00:00+02:00" pubdate data-updated="true">Apr 13<span>th</span>, 2013</time>
+        
+         | <a href="/how-to-pass-javascript-variables-from-a-server-to-angular/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I came across the problem of sending JavaScript variables from my backend,
+in this case an <a href="http://expressjs.com/">Express.js</a> server,
+to my frontend, means an <a href="http://angularjs.org/">Angular.js</a> controller. I&#8217;m using <a href="http://jade-lang.com/">Jade</a> as my template engine but the
+presented solutions should work with others, too.</p>
+
+<p>Basically you&#8217;ve got three options for doing this:</p>
+
+<ol>
+<li>Put the variable into the view file inside a <code>script</code> tag</li>
+<li>Make an HTTP request from Angular and serve the data as JSON from the
+backend</li>
+<li>Be smart and use <code>ng-init</code></li>
+</ol>
+
+
+<p>At the end of the article you find a link to a GitHub repo containing working
+examples for all the presented solutions. To play with the code fork and
+modify it according to your needs or start from scratch and add code while
+reading on. So, let&#8217;s start.</p>
+
+<p>First create an empty directory, use <code>express</code> command to create all necessary files and run
+<code>npm install</code> to download additional modules. At the end start your server with <code>node app.js</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>mkdir express-to-ngcontroller
+</span><span class='line'><span class="nb">cd </span>express-to-ngcontroller
+</span><span class='line'>express
+</span><span class='line'>npm install
+</span><span class='line'>node app.js
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Afterwards you should see the message</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>Express server listening on port 3000
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So far we&#8217;ve just set up our backend. Now it&#8217;s time to add some Angular code to your <code>layout.jade</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>doctype 5
+</span><span class='line'>html<span class="o">(</span>ng-app<span class="o">)</span>
+</span><span class='line'>  head
+</span><span class='line'>    <span class="nv">title</span><span class="o">=</span> title
+</span><span class='line'>    link<span class="o">(</span><span class="nv">rel</span><span class="o">=</span><span class="s1">&#39;stylesheet&#39;</span>, <span class="nv">href</span><span class="o">=</span><span class="s1">&#39;/stylesheets/style.css&#39;</span><span class="o">)</span>
+</span><span class='line'>    script<span class="o">(</span><span class="nv">src</span><span class="o">=</span><span class="s2">&quot;https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js&quot;</span><span class="o">)</span>
+</span><span class='line'>    script<span class="o">(</span><span class="nv">src</span><span class="o">=</span><span class="s2">&quot;/javascripts/controller.js&quot;</span><span class="o">)</span>
+</span><span class='line'>  body
+</span><span class='line'>    a<span class="o">(</span><span class="nv">href</span><span class="o">=</span><span class="s2">&quot;/solution-one&quot;</span><span class="o">)</span> solution one
+</span><span class='line'>    span -
+</span><span class='line'>    a<span class="o">(</span><span class="nv">href</span><span class="o">=</span><span class="s2">&quot;/solution-two&quot;</span><span class="o">)</span> solution two
+</span><span class='line'>    span -
+</span><span class='line'>    a<span class="o">(</span><span class="nv">href</span><span class="o">=</span><span class="s2">&quot;/solution-three&quot;</span><span class="o">)</span> solution three
+</span><span class='line'>    block content
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&#8217;s have a look at the above code. Activate Angular for the whole page by
+adding <code>ng-app</code> as an attribute to the <code>html</code> tag. Load <code>angular.min.js</code> from
+ Google CDN and <code>controller.js</code> from file. Inside the body I created a basic
+ menu to navigate from one
+solution to the other.</p>
+
+<p>Last but not least create some dummy data at the server. In production this
+data is loaded from a database, but in this example I want to keep everything
+ nice and simple. Copy the following code to your <code>app.js</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">users</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="mi">1</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;john&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;john@email.com&#39;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="mi">2</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;peter&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;peter@email.com&#39;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="mi">3</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;max@email.com&#39;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now everything should be set up and we can start tinkering with the different
+ solutions.</p>
+
+<h3>1. Put variable inside view file</h3>
+
+<p>Inside your <code>app.js</code> file create an additional route for <code>GET /solution-one</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/solution-one&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;solutionOne&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Express and Angular marriage&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">users</span><span class="o">:</span> <span class="nx">users</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We pass our <code>users</code> object to the view as a local variable named
+<code>users</code>. Running this code would throw an error as we haven&#8217;t created the view
+<code>solutionOne.jade</code> yet. Create this file inside the <code>views/</code> directory and
+put the following code inside</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">extends</span> <span class="nx">layout</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">block</span> <span class="nx">content</span>
+</span><span class='line'>  <span class="nx">div</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">controller</span><span class="o">=</span><span class="s2">&quot;UserCtrl&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nx">h1</span><span class="o">=</span> <span class="nx">title</span>
+</span><span class='line'>    <span class="nx">p</span> <span class="nx">Welcome</span> <span class="nx">to</span> <span class="err">#</span><span class="p">{</span><span class="nx">title</span><span class="p">}</span>
+</span><span class='line'>    <span class="nx">ul</span>
+</span><span class='line'>      <span class="nx">li</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">repeat</span><span class="o">=</span><span class="s2">&quot;user in users&quot;</span><span class="p">)</span> <span class="p">{{</span> <span class="nx">user</span><span class="p">.</span><span class="nx">name</span> <span class="p">}}</span> <span class="o">-</span> <span class="p">{{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}}</span>
+</span><span class='line'>  <span class="nx">script</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">users</span> <span class="o">=</span> <span class="o">!</span><span class="p">{</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">users</span><span class="p">)}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With <code>ng-controller="UserCtrl"</code> we tell Angular which controller we&#8217;d like
+ to use for all the DOM children of this element. At the bottom of the file
+ we&#8217;ve put some extra JavaScript with a global variable called <code>users</code> that
+ loads the contents from the local variable <code>users</code> passed to the view.
+ Notice that we have to use <code>!{}</code> instead of <code>#{}</code>, which is usually used in
+ Jade for interpolation. However <code>#{}</code> escapes HTML code and would create
+ something like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">users</span> <span class="o">=</span> <span class="p">{</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="mi">1</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:</span><span class="p">{</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">name</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">john</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;,</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">email</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">john</span><span class="err">@</span><span class="nx">email</span><span class="p">.</span><span class="nx">com</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;},</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="mi">2</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:</span><span class="p">{</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">name</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">peter</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;,</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">email</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">peter</span><span class="err">@</span><span class="nx">email</span><span class="p">.</span><span class="nx">com</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;},</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="mi">3</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:</span><span class="p">{</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">name</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">max</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;,</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">email</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="o">:&amp;</span><span class="nx">quot</span><span class="p">;</span><span class="nx">max</span><span class="err">@</span><span class="nx">email</span><span class="p">.</span><span class="nx">com</span><span class="o">&amp;</span><span class="nx">quot</span><span class="p">;}}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&#8217;s not what we want. We want a nicely formatted String representation of
+our JSON object. That&#8217;s why we need <code>!{}</code>.</p>
+
+<p>Then we need to load the content of this variable into our Angular scope.
+This is necessary for the <code>ng-repeat</code> directive as it doesn&#8217;t work with
+variables, which are outside of the Angular scope. Open <code>controller.js</code> and
+ put the following code inside.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">UserCtrl</span><span class="p">(</span><span class="nx">$scope</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">users</span> <span class="o">=</span> <span class="nx">users</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Start the server with <code>node app.js</code> and navigate to <code>/solution-one</code>. You
+should see a list with our three users where each list item contains the
+<code>name</code> and <code>email</code>. Nice, solution one works but let&#8217;s have a look at the
+pros and cons.</p>
+
+<h4>Pro</h4>
+
+<p>Solution one is probably the easiest to understand and fastest to implement.
+Every step is comprehensible and nothing fancy is going on.</p>
+
+<h4>Contra</h4>
+
+<p>Using global variables in JavaScript is a No-Go. However in this case it is
+not that bad as the content of the global variable <code>users</code> is loaded into
+scope at page load. Manipulating <code>users</code> afterwards doesn&#8217;t have any effects
+on the scope and our frontend.</p>
+
+<p>Still it is not the best solution. Let&#8217;s look at another one.</p>
+
+<h3>2. HTTP request from Angular to a JSON API</h3>
+
+<p>Inside <code>app.js</code> create another route for <code>GET /solution-two</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/solution-two&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;solutionTwo&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Express and Angular marriage&#39;</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and create the view <code>solutionTwo.jade</code> inside the <code>views/</code> folder with the
+following content</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kr">extends</span> <span class="nx">layout</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">block</span> <span class="nx">content</span>
+</span><span class='line'>  <span class="nx">div</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">controller</span><span class="o">=</span><span class="s2">&quot;UserTwoCtrl&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nx">h1</span><span class="o">=</span> <span class="nx">title</span>
+</span><span class='line'>    <span class="nx">p</span> <span class="nx">Welcome</span> <span class="nx">to</span> <span class="err">#</span><span class="p">{</span><span class="nx">title</span><span class="p">}</span>
+</span><span class='line'>    <span class="nx">ul</span>
+</span><span class='line'>      <span class="nx">li</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">repeat</span><span class="o">=</span><span class="s2">&quot;user in users&quot;</span><span class="p">)</span> <span class="p">{{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}}</span> <span class="o">-</span> <span class="p">{{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You might have noticed that we haven&#8217;t passed any data as local variables
+from our Express backend to the view. When you start the server and navigate
+with your browser to <code>/solution-one</code> you won&#8217;t see any users listed. We did
+add another controller <code>UserTwoCtrl</code> to our view and we will add some
+functionality now.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">UserTwoCtrl</span><span class="p">(</span><span class="nx">$scope</span><span class="p">,</span> <span class="nx">$http</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$http</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/solution-two/data&#39;</span><span class="p">).</span><span class="nx">success</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">users</span> <span class="o">=</span> <span class="nx">data</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As soon as the controller is initiated by Angular it automatically makes a
+ GET request to <code>/solution-two/data</code> and assigns the fetched data to <code>$scope.users</code>.
+ Now refresh the page and see what happened. You should see an
+ error saying</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">Failed</span> <span class="nx">to</span> <span class="nx">load</span> <span class="nx">resource</span><span class="o">:</span> <span class="nx">the</span> <span class="nx">server</span> <span class="nx">responded</span> <span class="kd">with</span> <span class="nx">a</span> <span class="nx">status</span> <span class="nx">of</span> <span class="mi">404</span> <span class="p">(</span><span class="nx">Not</span> <span class="nx">Found</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Your terminal running the server should log</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">GET</span> <span class="o">/</span><span class="nx">solution</span><span class="o">-</span><span class="nx">two</span><span class="o">/</span><span class="nx">data</span> <span class="mi">404</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It simply means that we haven&#8217;t implemented the route <code>GET
+/solution-two/data</code> yet. So let&#8217;s do this by adding the following code to the
+ <code>app.js</code> file</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/solution-two/data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">users</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Restart the server and with your browser go to <code>/solution-two/data</code>. You
+should see our <code>users</code> object as JSON. Now go to <code>/solution-two</code> and, voila,
+everything works as expected. Three list items are created each showing name
+and email. The screenshot shows the extra request as the last action.</p>
+
+<p><img src="https://s3.amazonaws.com/mircozeiss.com/angular-extra-http-request.png" title="Angular HTTP request fetching JSON data" ></p>
+
+<h4>Pro</h4>
+
+<p>Making HTTP request in order to get JSON data is common these days.
+Every major web service offers some kind of API to allow third party access.
+In theses cases, where you don&#8217;t have the necessary data on your own server,
+it is the best solution to make an HTTP request from your frontend. You
+could, of course, make the request from the server, get the data and send it
+to the client as shown in solution one. This, however,
+adds unnecessary overhead to our server and by calling the API from the
+client we can save valuable resources.</p>
+
+<h4>Contra</h4>
+
+<p>The second solution needs the most additional code and also an extra route
+from which the data is served as JSON. This can get a bit messy because you
+basically have to serve every route twice. Once for the view and once for the
+data. Therefore it is still not the perfect solution, which leads us to our last
+method.</p>
+
+<h3>3. Be smart and use ng-init</h3>
+
+<p>The third and probably best solution makes use of the <a href="http://docs-angularjs-org-dev.appspot.com/api/ng.directive:ngInit">ngInit</a> directive.</p>
+
+<blockquote><p>The ngInit directive specifies initialization tasks to be executed before
+the template enters execution mode during bootstrap.</p></blockquote>
+
+<p>What does that mean?</p>
+
+<p>Short answer: The expression (variable + content) given to ngInit is loaded
+into scope and made available under this name.</p>
+
+<p>Let&#8217;s have a look at the example from the Angular docs</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!doctype html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html</span> <span class="na">ng-app</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://code.angularjs.org/angular-1.0.2.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;div</span> <span class="na">ng-init=</span><span class="s">&quot;greeting=&#39;Hello&#39;; person=&#39;World&#39;&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      {{greeting}} {{person}}!
+</span><span class='line'>    <span class="nt">&lt;/div&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The variable <code>$scope.greeting</code> holds the String <code>'Hello'</code> and <code>$scope.person='World'</code>. Both are available inside the scope although not explicitly
+ specified inside a controller.</p>
+
+<p>We could rewrite and simplify the example like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">MyCtrl</span><span class="p">(</span><span class="nx">$scope</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">greeting</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span><span class="p">;</span>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">person</span> <span class="o">=</span> <span class="s1">&#39;World&#39;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!doctype html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html</span> <span class="na">ng-app</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://code.angularjs.org/angular-1.0.2.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;/javascripts/controller.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;div</span> <span class="na">ng-controller=</span><span class="s">&quot;MyCtrl&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      {{greeting}} {{person}}!
+</span><span class='line'>    <span class="nt">&lt;/div&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So let&#8217;s combine this approach and our initial problem. First,
+add a new route <code>GET /solution-three</code> to <code>app.js</code> and create the
+corresponding view <code>solutionThree.jade</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/solution-three&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;solutionThree&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Express and Angular marriage&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">users</span><span class="o">:</span> <span class="nx">users</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kr">extends</span> <span class="nx">layout</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">block</span> <span class="nx">content</span>
+</span><span class='line'>  <span class="nx">div</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">controller</span><span class="o">=</span><span class="s2">&quot;UserThreeCtrl&quot;</span><span class="p">,</span> <span class="nx">ng</span><span class="o">-</span><span class="nx">init</span><span class="o">=</span><span class="s2">&quot;users= #{JSON.stringify(users)}&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="nx">h1</span><span class="o">=</span> <span class="nx">title</span>
+</span><span class='line'>    <span class="nx">p</span> <span class="nx">Welcome</span> <span class="nx">to</span> <span class="err">#</span><span class="p">{</span><span class="nx">title</span><span class="p">}</span>
+</span><span class='line'>    <span class="nx">ul</span>
+</span><span class='line'>      <span class="nx">li</span><span class="p">(</span><span class="nx">ng</span><span class="o">-</span><span class="nx">repeat</span><span class="o">=</span><span class="s2">&quot;user in users&quot;</span><span class="p">)</span> <span class="p">{{</span><span class="nx">user</span><span class="p">.</span><span class="nx">name</span><span class="p">}}</span> <span class="o">-</span> <span class="p">{{</span><span class="nx">user</span><span class="p">.</span><span class="nx">email</span><span class="p">}}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see we pass our <code>users</code> variable to the Jade template as a local
+variable. Inside the template we convert the JSON object to its String
+representation and assign it to the Angular variable <code>users</code>. Later on we
+have access to this variable and use a regular <code>ngRepeat</code> directive to create
+ the list of users. Start the server, navigate to <code>/solution-three</code> and
+ you should the expected list of users.</p>
+
+<h4>Pro</h4>
+
+<p>It is the cleanest solution. We don&#8217;t have to use global variables and we
+don&#8217;t have to make an extra HTTP request. It is also the solution that needs
+the least amount of code.</p>
+
+<h4>Contra</h4>
+
+<p>The concept behind <code>ngInit</code> might be a bit confusing at the beginning. For
+further insights and to understand how Angular actually renders a page I
+recommend reading <a href="http://docs.angularjs.org/guide/bootstrap">Bootstrap</a> (not
+ related to <a href="http://twitter.github.io/bootstrap/">Twitter&#8217;s Bootstrap</a>) and
+ <a href="http://docs.angularjs.org/guide/compiler">HTML Compiler</a>.</p>
+
+<h3>Conclusion</h3>
+
+<p>You&#8217;ve learned that several solutions exist for passing data from your backend to an Angular
+controller. While solution one being the worst it depends on your architecture and your requirements
+whether solution two or three fits better. I personally tend to use the last solution as I have to make
+one less request to the server.</p>
+
+<p>As promised at the beginning you can find the working example at GitHub under
+ <a href="https://github.com/zeMirco/zemirco.github.io/tree/source/code-examples/server-vars-ngcontroller">server-vars-ngcontroller</a>.</p>
+
+<p><strong>Pro Tip</strong>: Don&#8217;t mix Jade&#8217;s <code>for user in users</code> and <code>ng-repeat="user in users"</code>
+ from Angular. I did that once at the beginning and was totally frustrated
+ because nothing worked as expected. You can image my feelings when I found
+ that mistake. Well, it was late that night!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -152,6 +682,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/tiny-yet-powerful-grid-built-on-css-flex/">Flexbox-grid: Tiny yet powerful grid built on CSS flex</a>
+      </li>
+    
+      <li class="post">
         <a href="/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/">Dokku in-depth tutorial - Your private PaaS on Amazon EC2</a>
       </li>
     
@@ -165,10 +699,6 @@
     
       <li class="post">
         <a href="/grunt-deployment-process-with-jade/">Grunt deployment process with Jade</a>
-      </li>
-    
-      <li class="post">
-        <a href="/building-offline-applications-with-angularjs-and-pouchdb/">Building offline applications with AngularJS and PouchDB</a>
       </li>
     
   </ul>
