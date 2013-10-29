@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Flexbox-grid: Tiny yet powerful grid built on CSS flex - Mirco Zeiss</title>
+  <meta name="author" content="Mirco Zeiss">
+
+  
+  <meta name="description" content="Today I&#8217;d like to introduce flexbox-grid. It is a CSS grid that is not only inspired by Bootstrap but also uses the same class names.
+So you &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://mircozeiss.com/tiny-yet-powerful-grid-built-on-css-flex">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Mirco Zeiss" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Fjalla+One' rel='stylesheet' type='text/css'>
+
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="zeMirco">
+  <meta name="twitter:creator" content="zeMirco">
+  <meta name="twitter:url" content="http://mircozeiss.com/tiny-yet-powerful-grid-built-on-css-flex">
+  <meta name="twitter:title" content="Flexbox-grid: Tiny yet powerful grid built on CSS flex">
+  <meta name="twitter:description" content="Today I&#8217;d like to introduce flexbox-grid. It is a CSS grid that is not only inspired by Bootstrap but also uses the same class names.
+So you might ask yourself right now:
+Why
+the
+f***ing
+hell &hellip;">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-40074158-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Mirco Zeiss</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:mircozeiss.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about.html">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Flexbox-grid: Tiny Yet Powerful Grid Built on CSS Flex</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-28T21:13:00+01:00" pubdate data-updated="true">Oct 28<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Today I&#8217;d like to introduce <a href="https://github.com/zeMirco/flexbox-grid">flexbox-grid</a>.</p>
+
+<p>It is a CSS grid that is not only inspired by <a href="http://getbootstrap.com/css/#grid">Bootstrap</a> but also uses the same class names.
+So you might ask yourself right now:
+<a href="http://unsemantic.com/">Why</a>
+<a href="http://semantic.gs/">the</a>
+<a href="http://yuilibrary.com/yui/docs/cssgrids/">f***ing</a>
+<a href="http://purecss.io/grids/">hell</a>
+<a href="http://foundation.zurb.com/grid.php">another</a>
+<a href="http://www.getskeleton.com/#grid">grid</a>?
+Well, first of all for learning and playing with the CSS <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/flex">flex property</a>. Secondly, actually using flex. None of the grids above
+makes use of flex. That&#8217;s totally understandable because it is not yet <a href="http://caniuse.com/#feat=flexbox">supported</a>
+by all major browsers.</p>
+
+<iframe width="100%" height="430" src="http://caniuse.com/flexbox/embed/description"></iframe>
+
+
+<p>However I&#8217;d like to focus solely on modern browsers and devices. Last but not least, the killer argument that seems to apply
+to every new CSS/JS/*** library, it is <a href="http://updates.html5rocks.com/2013/10/Flexbox-layout-isn-t-slow">fast</a> and tiny.
+And by tiny I mean really tiny. Gzipped only 660 bytes. Here is the report from
+<a href="https://github.com/gruntjs/grunt-contrib-cssmin">cssmin</a>.</p>
+
+<p>Original: 9192 bytes.
+Minified: 7476 bytes.
+Gzipped:  660 bytes.</p>
+
+<p><a href="http://topcoat.io/">Topcoat</a> has already <a href="https://github.com/topcoat/grid">forked the grid</a> and added it to its portfolio.</p>
+
+<h3>About the project</h3>
+
+<p><a href="https://github.com/zeMirco/flexbox-grid">flexbox-grid</a> is built with <a href="http://learnboost.github.io/stylus/">Stylus</a>.</p>
+
+<p>The default number of columns is 12 and the default gutter width (space between the columns) is 1rem.
+You can change that by editing <code>var-columns</code> and <code>var-gutter-width</code> inside <a href="https://github.com/zeMirco/flexbox-grid/blob/master/flexbox-grid.styl">flexbox-grid.styl</a>.
+Afterwards run <code>grunt</code> to get the <code>.css</code> and <code>.min.css</code> files.</p>
+
+<h4>Basic grid</h4>
+
+<p>The basic grid has four main <code>col-*</code> classes. One for phone, one for tablets, one for desktop and one for large
+desktop. The breakpoints are the same as in <a href="http://getbootstrap.com/css/#grid">Bootstrap</a>.</p>
+
+<ul>
+<li><code>col-xs-*</code> - phones, up to 480px</li>
+<li><code>col-sm-*</code> - tablets, 768px and up</li>
+<li><code>col-md-*</code> - desktops, 992px and up</li>
+<li><code>col-lg-*</code> - large desktops, 1200px and up</li>
+</ul>
+
+
+<iframe width="100%" height="300" src="http://jsfiddle.net/m9MFc/4/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h4>Offset classes</h4>
+
+<p>By using the <code>col-*-offset-x</code> we can shift columns to the right. This class simply adds a left margin that has the width
+of x columns. Therefore the columns above and below are all perfectly aligned with the offset column.</p>
+
+<iframe width="100%" height="300" src="http://jsfiddle.net/AXCPk/6/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h4>Mix grid and offset classes</h4>
+
+<p>Of course you can mix the basic grid class with offset classes. You just have to make sure that in the end everything sums
+up to twelve or less than twelve columns. That means you could use the following classes in one <code>row</code>:</p>
+
+<ul>
+<li><code>col-xs-2</code></li>
+<li><code>col-xs-2 col-xs-offset-4</code></li>
+<li><code>col-xs-2 col-xs-offset-2</code></li>
+</ul>
+
+
+<p>or</p>
+
+<ul>
+<li><code>col-lg-6</code></li>
+<li><code>col-lg-2 col-lg-offset-3</code></li>
+<li><code>col-lg-1</code></li>
+</ul>
+
+
+<iframe width="100%" height="200" src="http://jsfiddle.net/Ax5xU/5/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h4>Auto width columns</h4>
+
+<p>That&#8217;s a pretty cool feature of flex. You can just put as many divs with class <code>col-auto</code> as you want in one <code>row</code> and they
+will automatically share the available space among them. You don&#8217;t have to think and calculate stuff like &#8220;hm .. I want four
+equally wide divs in my row &#8230; in my setup each row consists of 12 columns &#8230; 12/4 is 3 and I therefore have to use
+<code>col-lg-3</code>&#8221;.</p>
+
+<iframe width="100%" height="200" src="http://jsfiddle.net/H7PPV/1/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h4>Mix fixed width and auto width columns</h4>
+
+<p>Again you can mix fixed width and auto width columns without causing any layout weirdness. In the example below all
+<code>col-auto</code> columns have a light blue background to distinguish them from the fixed width rows.</p>
+
+<iframe width="100%" height="200" src="http://jsfiddle.net/fmDgH/2/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h4>Nesting</h4>
+
+<p>It is also possible to nest different types of columns. Similar to Bootstrap you can start a new <code>row</code> within one <code>col-*</code>.
+You just have to remember that inside this new <code>row</code> your columns will again sum up to a maximum number of 12.</p>
+
+<iframe width="100%" height="200" src="http://jsfiddle.net/LafLy/2/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h4>Responsive features</h4>
+
+<p>The initial relase of <a href="https://github.com/zeMirco/flexbox-grid">flexbox-grid</a> did not have any responsive features. With v1.0.0 I&#8217;ve added the same responsive
+classes that Bootstrap has. You don&#8217;t have to learn anything new and switching back and forth between those two libraries
+is easy as. Simply use <code>col-xs-*</code>, <code>col-sm-*</code>, <code>col-md-*</code> and <code>col-lg-*</code> to target different devices.</p>
+
+<iframe width="100%" height="300" src="http://jsfiddle.net/cAHeq/2/embedded/result,html,css/" allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+
+
+<h3>Conclusion</h3>
+
+<p>I&#8217;ve learned a lot about Stylus and the CSS flex property while working on this project. Quite often we simply take things
+for granted and rely on stuff that&#8217;s already available and works well. However from time to time we have to leave our
+comfort zone and have to think outside the box. That&#8217;s how we continuously improve our skills. Especially for mobile and
+low bandwidth we need to focus on performance and simplicity. It&#8217;s a good reason to rewrite everything from scratch while
+making use of new technologies like flex. Depending on the project you are working on you can start using flex today and
+enjoy all the <a href="http://philipwalton.github.io/solved-by-flexbox/">possibilities</a> it offers.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mirco Zeiss</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-28T21:13:00+01:00" pubdate data-updated="true">Oct 28<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/categories/css/'>CSS</a>, <a class='category' href='/categories/flex/'>flex</a>, <a class='category' href='/categories/grid/'>grid</a>, <a class='category' href='/categories/topcoat/'>topcoat</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://mircozeiss.com/tiny-yet-powerful-grid-built-on-css-flex/" data-via="zeMirco" data-counturl="http://mircozeiss.com/tiny-yet-powerful-grid-built-on-css-flex/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/" title="Previous Post: Dokku in-depth tutorial - Your private PaaS on Amazon EC2">&laquo; Dokku in-depth tutorial - Your private PaaS on Amazon EC2</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/tiny-yet-powerful-grid-built-on-css-flex/">Flexbox-grid: Tiny yet powerful grid built on CSS flex</a>
+      </li>
+    
+      <li class="post">
+        <a href="/dokku-in-depth-tutorial-your-private-saas-on-amazon-ec2/">Dokku in-depth tutorial - Your private PaaS on Amazon EC2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/github-like-signup-form-with-angularjs-and-bootstrap-v3/">GitHub like signup form with AngularJS and Bootstrap v3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/sync-multiple-angularjs-apps-without-server-via-pouchdb/">Sync multiple AngularJS apps without server via PouchDB</a>
+      </li>
+    
+      <li class="post">
+        <a href="/grunt-deployment-process-with-jade/">Grunt deployment process with Jade</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/110362264265849877288?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Mirco Zeiss -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'blogmircozeiss';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://mircozeiss.com/tiny-yet-powerful-grid-built-on-css-flex/';
+        var disqus_url = 'http://mircozeiss.com/tiny-yet-powerful-grid-built-on-css-flex/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
