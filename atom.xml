@@ -4,7 +4,7 @@
   <title><![CDATA[Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-10-29T18:08:24+01:00</updated>
+  <updated>2013-12-06T19:39:47+01:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,807 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PouchDB vs. Couchbase Lite - a performance review]]></title>
+    <link href="http://mircozeiss.com/pouchdb-vs-couchbase-lite-a-performance-review/"/>
+    <updated>2013-12-04T13:25:00+01:00</updated>
+    <id>http://mircozeiss.com/pouchdb-vs-couchbase-lite-a-performance-review</id>
+    <content type="html"><![CDATA[<p>Client side databases with offline support are very important for mobile hybrid apps where performance matters. I&#8217;ve developed several
+apps with Cordova/Phonegap in the last months and always needed a database to save information on the client, that has offline
+support and allows replicating data back to my cloud database. Two databases came up whenever I was looking for a solution - PouchDB and
+Couchbase Lite Phonegap. PouchDB works entirely in the browser whereas Couchbase Lite works with native databases on iOS and Android
+through a JavaScript API.</p>
+
+<p>Today I&#8217;d like to draw a comparison between them focusing on performance. How fast do they write data and how fast do they
+retrieve data? I chose four actions and did ten repetitions each</p>
+
+<ul>
+<li>bulk add documents</li>
+<li>get all documents</li>
+<li>get document by id</li>
+<li>query database via view</li>
+</ul>
+
+
+<p>The code is on <a href="https://github.com/zeMirco/pouchdb-vs-couchbase">GitHub</a> so you can run the tests for yourself. My tests were done on my MacBook Pro running Mavericks
+ inside the iOS emulator. Therefore the exact values will be different depending on which hardware you use. The overall results and findings should
+ still be the same though.</p>
+
+<h3>Bulk add documents</h3>
+
+<p>The first action is adding random documents to each database. The first run was with 10000 and the second with 25000 documents.</p>
+
+<p>The code snippets look like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// add array of documents to PouchDB</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">pouch_bulkAdd</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">max</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">generate</span><span class="p">(</span><span class="nx">max</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;PouchDB - bulk add&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">db</span><span class="p">.</span><span class="nx">bulkDocs</span><span class="p">({</span><span class="nx">docs</span><span class="o">:</span> <span class="nx">data</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;PouchDB - bulk add&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// save one user for later query</span>
+</span><span class='line'>    <span class="nx">dummyId</span> <span class="o">=</span> <span class="nx">res</span><span class="p">[</span><span class="mi">5000</span><span class="p">].</span><span class="nx">id</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// add array of documents to Couchbase Lite</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">couchbase_bulkAdd</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">max</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">;</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">generate</span><span class="p">(</span><span class="nx">max</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - bulk add&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">url</span><span class="o">:</span> <span class="nx">globalUrl</span> <span class="o">+</span> <span class="s1">&#39;performance/_bulk_docs&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">data</span><span class="o">:</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span><span class="s1">&#39;docs&#39;</span><span class="o">:</span> <span class="nx">data</span><span class="p">}),</span>
+</span><span class='line'>    <span class="nx">contentType</span> <span class="o">:</span> <span class="s1">&#39;application/json&#39;</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - bulk add&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">dummyId</span> <span class="o">=</span> <span class="nx">res</span><span class="p">[</span><span class="mi">5000</span><span class="p">].</span><span class="nx">id</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<table class="table table-condensed full-width">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>PouchDB (10000 docs)</th>
+      <th>CB Lite (10000 docs)</th>
+      <th> - </th>
+      <th>PouchDB (25000 docs)</th>
+      <th>CB Lite (25000 docs)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>2214 ms</td>
+      <td>2459 ms</td>
+      <td> - </td>
+      <td>5568 ms</td>
+      <td>6064 ms</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>2391 ms</td>
+      <td>2777 ms</td>
+      <td> - </td>
+      <td>5561 ms</td>
+      <td>6583 ms</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>1532 ms</td>
+      <td>2966 ms</td>
+      <td> - </td>
+      <td>5494 ms</td>
+      <td>6683 ms</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>1506 ms</td>
+      <td>3071 ms</td>
+      <td> - </td>
+      <td>5805 ms</td>
+      <td>6723 ms</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>1539 ms</td>
+      <td>3022 ms</td>
+      <td> - </td>
+      <td>5705 ms</td>
+      <td>6828 ms</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>1607 ms</td>
+      <td>3087 ms</td>
+      <td> - </td>
+      <td>5746 ms</td>
+      <td>6769 ms</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>1596 ms</td>
+      <td>3141 ms</td>
+      <td> - </td>
+      <td>5841 ms</td>
+      <td>6805 ms</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>1694 ms</td>
+      <td>3239 ms</td>
+      <td> - </td>
+      <td>5676 ms</td>
+      <td>6887 ms</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>1600 ms</td>
+      <td>3245 ms</td>
+      <td> - </td>
+      <td>5820 ms</td>
+      <td>6923 ms</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>1579 ms</td>
+      <td>3278 ms</td>
+      <td> - </td>
+      <td>5873 ms</td>
+      <td>6886 ms</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Ø</td>
+      <td style="background-color: lime;">1725.8 ms</td>
+      <td>3028.5 ms</td>
+      <td> - </td>
+      <td style="background-color: lime;">5708.9 ms</td>
+      <td>6715.1 ms</td>
+    </tr>
+  </tfoot>
+</table>
+
+
+<p><img src="https://s3.amazonaws.com/zeMirco/github/pouchdb-vs-couchbase/bulk-add.png" title="bulk add documents" ></p>
+
+<h3>Get all documents</h3>
+
+<p>The second action was getting all documents from each database, again with 10000 documents and then with 25000 documents.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// get all documents from PouchDB</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">pouch_allDocs</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;PouchDB - all docs&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">db</span><span class="p">.</span><span class="nx">allDocs</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;PouchDB - all docs&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// get all documents from Couchbase Lite</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">couchbase_allDocs</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - all docs&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">globalUrl</span> <span class="o">+</span> <span class="s1">&#39;performance/_all_docs&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - all docs&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<table class="table table-condensed full-width">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>PouchDB (10000 docs)</th>
+      <th>CB Lite (10000 docs)</th>
+      <th> - </th>
+      <th>PouchDB (25000 docs)</th>
+      <th>CB Lite (25000 docs)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>345 ms</td>
+      <td>126 ms</td>
+      <td> - </td>
+      <td>852 ms</td>
+      <td>364 ms</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>325 ms</td>
+      <td>29 ms</td>
+      <td> - </td>
+      <td>796 ms</td>
+      <td>41 ms</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>315 ms</td>
+      <td>16 ms</td>
+      <td> - </td>
+      <td>800 ms</td>
+      <td>40 ms</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>315 ms</td>
+      <td>16 ms</td>
+      <td> - </td>
+      <td>782 ms</td>
+      <td>39 ms</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>311 ms</td>
+      <td>16 ms</td>
+      <td> - </td>
+      <td>806 ms</td>
+      <td>39 ms</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>314 ms</td>
+      <td>17 ms</td>
+      <td> - </td>
+      <td>791 ms</td>
+      <td>39 ms</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>315 ms</td>
+      <td>22 ms</td>
+      <td> - </td>
+      <td>791 ms</td>
+      <td>40 ms</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>308 ms</td>
+      <td>18 ms</td>
+      <td> - </td>
+      <td>787 ms</td>
+      <td>39 ms</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>315 ms</td>
+      <td>16 ms</td>
+      <td> - </td>
+      <td>821 ms</td>
+      <td>37 ms</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>313 ms</td>
+      <td>16 ms</td>
+      <td> - </td>
+      <td>801 ms</td>
+      <td>40 ms</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Ø</td>
+      <td>317.6 ms</td>
+      <td style="background-color: lime;">29.2 ms</td>
+      <td> - </td>
+      <td>802.7 ms</td>
+      <td style="background-color: lime;">71.8 ms</td>
+    </tr>
+  </tfoot>
+</table>
+
+
+<p><img src="https://s3.amazonaws.com/zeMirco/github/pouchdb-vs-couchbase/get-all-docs.png" title="get all documents" ></p>
+
+<h3>Get document by id</h3>
+
+<p>The third action was getting a single document by id. First one document was picked out of the 10000 and for the second run
+out of 25000 documents.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// get a certain document by id</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">pouch_get</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;PouchDB - get single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">db</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">dummyId</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;PouchDB - get single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">queryUser</span> <span class="o">=</span> <span class="nx">doc</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// get a certain document by id</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">couchbase_get</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - get single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">globalUrl</span> <span class="o">+</span> <span class="s1">&#39;performance/&#39;</span> <span class="o">+</span> <span class="nx">dummyId</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - get single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">queryUser</span> <span class="o">=</span> <span class="nx">doc</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<table class="table table-condensed full-width">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>PouchDB (10000 docs)</th>
+      <th>CB Lite (10000 docs)</th>
+      <th> - </th>
+      <th>PouchDB (25000 docs)</th>
+      <th>CB Lite (25000 docs)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>5 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>8 ms</td>
+      <td>8 ms</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>2 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>2 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>2 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>3 ms</td>
+      <td>5 ms</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>3 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>3 ms</td>
+      <td>5 ms</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>2 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>3 ms</td>
+      <td>3 ms</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>3 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>4 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>3 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>3 ms</td>
+      <td>7 ms</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>2 ms</td>
+      <td>5 ms</td>
+      <td> - </td>
+      <td>3 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>2 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>3 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>2 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>4 ms</td>
+      <td>5 ms</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Ø</td>
+      <td style="background-color: lime;">2.6 ms</td>
+      <td>3.7 ms</td>
+      <td> - </td>
+      <td style="background-color: lime;">3.6 ms</td>
+      <td>4.9 ms</td>
+    </tr>
+  </tfoot>
+</table>
+
+
+<p><img src="https://s3.amazonaws.com/zeMirco/github/pouchdb-vs-couchbase/get-doc-by-id.png" title="get document by id" ></p>
+
+<h3>Query db with view document and key</h3>
+
+<p>When you run queries against each database you have to remember that Couchbase Lite needs view documents (like CouchDB)
+compared to PouchDB that works with on-the-fly map/reduce functions. So whenever we initialize our app we have to save all
+required view documents to Couchbase Lite (or check if they are already present). As you can see the mapping function is the
+same for both databases.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// couchbase lite view</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">view</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;_design/users&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;views&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;email&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="s2">&quot;map&quot;</span><span class="o">:</span> <span class="s2">&quot;function(doc) { emit(doc.email, null) }&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// save view to couchbase lite</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;PUT&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="nx">globalUrl</span> <span class="o">+</span> <span class="s1">&#39;performance/_design/users&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nx">data</span><span class="o">:</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">view</span><span class="p">),</span>
+</span><span class='line'>  <span class="nx">contentType</span> <span class="o">:</span> <span class="s1">&#39;application/json&#39;</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'><span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">log</span><span class="p">(</span><span class="s1">&#39;view created&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now you can query each database.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// query pouchdb</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">pouch_query</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// mapping function</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">emit</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">email</span><span class="p">,</span> <span class="kc">null</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;PouchDB - query single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="c1">// query PouchDB</span>
+</span><span class='line'>  <span class="nx">db</span><span class="p">.</span><span class="nx">query</span><span class="p">({</span><span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">},</span> <span class="p">{</span><span class="nx">key</span><span class="o">:</span> <span class="nx">queryUser</span><span class="p">.</span><span class="nx">email</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;PouchDB - query single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// query the database</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">couchbase_query</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">time</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - query single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">url</span><span class="o">:</span> <span class="nx">globalUrl</span> <span class="o">+</span> <span class="s1">&#39;performance/_design/users/_view/email?key=&quot;&#39;</span> <span class="o">+</span> <span class="nx">queryUser</span><span class="p">.</span><span class="nx">email</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">timeEnd</span><span class="p">(</span><span class="s1">&#39;Couchbase lite - query single doc&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<table class="table table-condensed full-width">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>PouchDB (10000 docs)</th>
+      <th>CB Lite (10000 docs)</th>
+      <th> - </th>
+      <th>PouchDB (25000 docs)</th>
+      <th>CB Lite (25000 docs)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>370 ms</td>
+      <td>1754 ms</td>
+      <td> - </td>
+      <td>859 ms</td>
+      <td>4401 ms</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>338 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>846 ms</td>
+      <td>5 ms</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>324 ms</td>
+      <td>5 ms</td>
+      <td> - </td>
+      <td>842 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>338 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>873 ms</td>
+      <td>7 ms</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>346 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>866 ms</td>
+      <td>3 ms</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>340 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>862 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>337 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>838 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>330 ms</td>
+      <td>6 ms</td>
+      <td> - </td>
+      <td>861 ms</td>
+      <td>4 ms</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>332 ms</td>
+      <td>4 ms</td>
+      <td> - </td>
+      <td>859 ms</td>
+      <td>3 ms</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>337 ms</td>
+      <td>3 ms</td>
+      <td> - </td>
+      <td>844 ms</td>
+      <td>7 ms</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td>Ø</td>
+      <td>339.2 ms</td>
+      <td style="background-color: lime;">178.8 ms</td>
+      <td> - </td>
+      <td>855 ms</td>
+      <td style="background-color: lime;">444.2 ms</td>
+    </tr>
+  </tfoot>
+</table>
+
+
+<p><img src="https://s3.amazonaws.com/zeMirco/github/pouchdb-vs-couchbase/query-via-view.png" title="query via view document" ></p>
+
+<h3>Conclusion</h3>
+
+<p>Here is a summary of the results. For the part &#8220;query doc via view&#8221; I&#8217;ll call it a draw. Couchbase Lite is about 5 times
+slower than PouchDB but has the huge advantage of caching for subsequent requests (and therefore wins when averaging the request
+times).</p>
+
+<table class="table table-condensed full-width">
+  <thead>
+    <tr>
+      <td></td>
+      <td style="text-align: center;">PouchDB</td>
+      <td style="text-align: center;">Couchbase Lite Phonegap</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>bulk add documents</td>
+      <td style="text-align: center;">+</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>get all documents</td>
+      <td></td>
+      <td style="text-align: center;">+</td>
+    </tr>
+    <tr>
+      <td>get document by id</td>
+      <td style="text-align: center;">+</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>query doc via view</td>
+      <td style="text-align: center;">o</td>
+      <td style="text-align: center;">o</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<p>PouchDB (and CouchDB) are <a href="http://www.couchbase.com/couchbase-vs-couchdb">different</a> from Couchbase Lite (and Couchbase). Jan Lehnardt and
+ Scott Hanselman have a great discussion about that topic in the podcast <a href="http://www.hanselminutes.com/386/understanding-couchdb-and-nosql-with-jan-lehnardt">Understanding CouchDB and NoSQL with Jan Lehnardt</a>.
+ The most important difference is caching. Couchbase is a combination between CouchDB and Membase and as it is stated on their homepage
+  &#8220;has a built-in, memcached-based caching technology&#8221;. The data tells the same story.</p>
+
+<p>Take a look at the last section &#8220;Query db with view document and key&#8221;. On the first request Couchbase Lite needs much more
+time than PouchDB to find the document. However on subsequent requests Couchbase Lite is able to find the same document
+within a few milliseconds whereas PouchDB constantly needs the same amount of time. That means you should always try to
+guess which documents the user is looking for before the user actually wants to get them. That way a requests only takes a few
+milliseconds and your app delivers a great user experience. The caching mechanism is also clearly noticeable when getting all
+documents from the db. The first requests takes much longer than the following ones. However compared to PouchDB all requests,
+even the first one, are much faster.</p>
+
+<p>PouchDB wins the first section where we add a huge amount of random data to the db. Finding a document by ID is also faster in PouchDB
+compared to Couchbase Lite. Interesting here is that Couchbase Lite doesn&#8217;t seem to cache this requests. Subsequent requests aren&#8217;t
+significantly faster than the first one and PouchDB still wins after a couple of repeated requests.</p>
+
+<p>In total it comes down to the caching feature of Couchbase Lite. PouchDB handles writing documents to db, where caching has no influence,
+ better whereas Couchbase Lite is much faster, especially after the first requests, when it comes to reading documents from db.
+ Therefore it is up to you and your requirements, which database you choose for your next project.</p>
+
+<p>There is also a new kid in town - <a href="http://dev.yathit.com/">http://dev.yathit.com/</a>. I haven&#8217;t yet tried
+this one and cannot say anything about performance and overall usability. It has one major disadvantage compared to PouchDB and
+Couchbase Lite and that is replication / syncing. That feature is not built into the db and you have to implement it yourself.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Flexbox-grid: Tiny yet powerful grid built on CSS flex]]></title>
