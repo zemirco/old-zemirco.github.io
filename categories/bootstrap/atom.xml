@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Bootstrap | Mirco Zeiss]]></title>
   <link href="http://mircozeiss.com/categories/bootstrap/atom.xml" rel="self"/>
   <link href="http://mircozeiss.com/"/>
-  <updated>2013-12-06T19:39:47+01:00</updated>
+  <updated>2014-01-15T19:34:24+01:00</updated>
   <id>http://mircozeiss.com/</id>
   <author>
     <name><![CDATA[Mirco Zeiss]]></name>
@@ -12,6 +12,192 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Lockit - an Express authentication solution]]></title>
+    <link href="http://mircozeiss.com/lockit-an-express-authentication-solution/"/>
+    <updated>2014-01-15T10:51:00+01:00</updated>
+    <id>http://mircozeiss.com/lockit-an-express-authentication-solution</id>
+    <content type="html"><![CDATA[<p>What does every app need? <strong>Users!</strong></p>
+
+<p>What does every app therefore need to have? An <strong>authentication solution</strong>:</p>
+
+<ul>
+<li>signup new users</li>
+<li>allow existing users to login</li>
+<li>help users who forgot their password</li>
+<li>etc.</li>
+</ul>
+
+
+<p>What's the most annoying part to write when building a new app?
+The <strong>user authentication solution</strong>.</p>
+
+<p>Focus on building your app instead of reinventing the wheel and use <a href="https://github.com/zeMirco/lockit">lockit</a>.</p>
+
+<h3>Concept</h3>
+
+<p>Lockit is inspired by Ruby's <a href="https://github.com/plataformatec/devise">devise</a>.
+It consists of multiple single purpose modules that you could also use on their own.
+The main module <code>lockit</code> is just a wrapper around those</p>
+
+<ul>
+<li><a href="https://github.com/zeMirco/lockit-login">lockit-login</a></li>
+<li><a href="https://github.com/zeMirco/lockit-signup">lockit-signup</a></li>
+<li><a href="https://github.com/zeMirco/lockit-delete-account">lockit-delete-account</a></li>
+<li><a href="https://github.com/zeMirco/lockit-forgot-password">lockit-forgot-password</a></li>
+<li><a href="https://github.com/zeMirco/lockit-sendmail">lockit-sendmail</a></li>
+<li><a href="https://github.com/zeMirco/lockit-couchdb-adapter">lockit-couchdb-adapter</a></li>
+<li><a href="https://github.com/zeMirco/lockit-mongodb-adapter">lockit-mongodb-adapter</a></li>
+<li><a href="https://github.com/zeMirco/lockit-utilities">lockit-utilities</a></li>
+<li><a href="https://github.com/zeMirco/lockit-template-blank">lockit-template-blank</a></li>
+</ul>
+
+
+<p>When you have problems please try to open an issue in the according repository.</p>
+
+<h3>How to use</h3>
+
+<p>Install the module and the adapter for your database (couchdb or mongodb) via npm</p>
+
+<p><code>
+npm install lockit lockit-couchdb-adapter
+</code></p>
+
+<p>Create a <code>config.js</code> in your <code>app/</code> folder with your database settings</p>
+
+<p>```js
+// database settings for CouchDB
+exports.db = 'couchdb';
+exports.dbUrl = 'http://127.0.0.1:5984/test';</p>
+
+<p>// or if you want to use MongoDB
+// exports.db = 'mongodb';
+// exports.dbUrl = 'mongodb://127.0.0.1/test';
+// exports.dbCollection = 'users';
+```</p>
+
+<p><strong>Important!</strong> If you are using CouchDB you need to create the necessary views first.
+Lockit comes with a helper file that does it automatically for you. Simply run</p>
+
+<p><code>
+config=[PATH] node node_modules/lockit/createCouchViews.js
+</code></p>
+
+<p>[PATH] should be the location of your config.js, i.e.</p>
+
+<p><code>
+config=./config.js node node_modules/lockit/createCouchViews.js
+</code></p>
+
+<p>If you don't use CouchDB you can simply continue here.</p>
+
+<p>Use both modules in your <code>app.js</code> file</p>
+
+<p><code>js
+var config = require('./config.js');
+var lockit = require('lockit');
+</code></p>
+
+<p>Activate the module by calling the main <code>lockit()</code> function</p>
+
+<p>```js
+// ... express stuff</p>
+
+<p>// use middleware before router so your own routes have access to
+// req.session.email and req.session.username</p>
+
+<p>// sessions have to be enabled!
+lockit(app, config);</p>
+
+<p>// ... more express stuff
+```</p>
+
+<p>Include <a href="http://getbootstrap.com/">bootstrap</a> css in your views/layout.jade</p>
+
+<p><code>
+link(rel='stylesheet', href='http://mircozeiss.com/css/bootstrap.min.css')
+</code></p>
+
+<p>Start your app like always with <code>node app.js</code>, open the browser and navigate to <a href="http://localhost:3000/signup">localhost:3000/signup</a>.
+I've also included an <a href="https://github.com/zeMirco/lockit/tree/master/example">example app</a> that you can download and run locally.
+It has a special route <code>/profile</code> which demonstrates how to get user information from db and show them
+in the browser.</p>
+
+<p>You'll notice that nothing happens after you've signed up although
+you should see a message that an email has been sent to you.
+If you take a look at your database however, you should be able to see your just created user.
+So the user is created but the email is simply not sent.</p>
+
+<p>That's because the email service is not set up yet.
+By default all email communication is stubbed (no emails are sent).
+You need to have your own email service in order to send emails when a user signs up or
+requests a new password. Under the hood lockit uses <a href="https://github.com/andris9/Nodemailer">nodemailer</a> to send emails.
+You can therefore use the same configuration in your <code>config.js</code> file.</p>
+
+<p>```js
+// default settings
+exports.emailType = 'Stub';
+exports.emailSettings = {
+  service: 'none',
+  auth: {</p>
+
+<pre><code>user: 'none',
+pass: 'none'
+</code></pre>
+
+<p>  }
+};</p>
+
+<p>// change them to something similar like
+// exports.emailType = 'SMTP';
+// exports.emailSettings = {
+//   service: 'Gmail',
+//   auth: {
+//     user: 'gmail.user@gmail.com',
+//     pass: 'userpass'
+//   }
+// };
+```</p>
+
+<p>Now you are good to go. You can also change all the other stuff like email template,
+welcome text, title and subject of the emails, etc. Take a look at the <a href="https://github.com/zeMirco/lockit#configuration">lockit#configuration</a>
+part at GitHub to see all possibilities.</p>
+
+<h3>FAQ</h3>
+
+<ol>
+<li><p>How is this different to <a href="http://passportjs.org/">passport</a>?</p>
+
+<p>   Passport offers different strategies (local, OpenID, OAuth) for authentication.
+   It assumes that you already have users in your db and only handles login, logout and route restriction.
+   It does not send any emails on signup or when a user forgot a password.
+   You can think of Lockit as a layer before Passport. I haven't tried it yet but it should work
+   to use Lockit for signup, forgot password, delete account and on top of that Passport with
+   the <a href="https://github.com/jaredhanson/passport-local">local strategy</a>.</p></li>
+<li><p>Why didn't you use <a href="http://www.mozilla.org/en-US/persona/">Persona</a>?</p>
+
+<p>   Well, I've tried Persona and like it a lot for simple web based solutions. However authentication
+   solutions should work on all devices and for all platforms. One big problem is that Persona does
+   not work with PhoneGap and other environments that break when opening popups. See the related
+   <a href="https://github.com/mozilla/persona/issues/2034">issue #2034</a>.</p></li>
+<li><p>What about a SaaS solution like <a href="https://www.userapp.io/">userapp</a>?</p>
+
+<p>   User information is the most valuable, critical and sensible data.
+   Users trust you to handle them with care.
+   Therefore I don't like giving them away.</p></li>
+</ol>
+
+
+<h3>Conclusion</h3>
+
+<p>Please give <a href="https://github.com/zeMirco/lockit">lockit</a> a try. Leave comments, feedback and issues
+ on GitHub or here in the comments.</p>
+
+<p>I'm not a security expert although I've read a lot about this topic while developing lockit.
+So use it with care and probably do not use it for production yet. I'm sure there is room for improvements.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[GitHub like signup form with AngularJS and Bootstrap v3]]></title>
