@@ -9,8 +9,8 @@
   <meta name="author" content="Mirco Zeiss">
 
   
-  <meta name="description" content="Client side databases with offline support are very important for mobile hybrid apps where performance matters. I&#8217;ve developed several
-apps &hellip;">
+  <meta name="description" content="What does every app need? Users! What does every app therefore need to have? An authentication solution: signup new users
+allow existing users to &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -39,8 +39,10 @@ apps &hellip;">
   <meta name="twitter:creator" content="zeMirco">
   <meta name="twitter:url" content="http://mircozeiss.com">
   <meta name="twitter:title" content="Mirco Zeiss">
-  <meta name="twitter:description" content="Client side databases with offline support are very important for mobile hybrid apps where performance matters. I&#8217;ve developed several
-apps with Cordova/Phonegap in the last months and always &hellip;">
+  <meta name="twitter:description" content="What does every app need? Users! What does every app therefore need to have? An authentication solution: signup new users
+allow existing users to login
+help users who forgot their password
+etc. What &hellip;">
 
   
   <script type="text/javascript">
@@ -88,6 +90,259 @@ apps with Cordova/Phonegap in the last months and always &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/lockit-an-express-authentication-solution/">Lockit - an Express Authentication Solution</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-15T10:51:00+01:00" pubdate data-updated="true">Jan 15<span>th</span>, 2014</time>
+        
+         | <a href="/lockit-an-express-authentication-solution/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>What does every app need? <strong>Users!</strong></p>
+
+<p>What does every app therefore need to have? An <strong>authentication solution</strong>:</p>
+
+<ul>
+<li>signup new users</li>
+<li>allow existing users to login</li>
+<li>help users who forgot their password</li>
+<li>etc.</li>
+</ul>
+
+
+<p>What&#8217;s the most annoying part to write when building a new app?
+The <strong>user authentication solution</strong>.</p>
+
+<p>Focus on building your app instead of reinventing the wheel and use <a href="https://github.com/zeMirco/lockit">lockit</a>.</p>
+
+<h3>Concept</h3>
+
+<p>Lockit is inspired by Ruby&#8217;s <a href="https://github.com/plataformatec/devise">devise</a>.
+It consists of multiple single purpose modules that you could also use on their own.
+The main module <code>lockit</code> is just a wrapper around those</p>
+
+<ul>
+<li><a href="https://github.com/zeMirco/lockit-login">lockit-login</a></li>
+<li><a href="https://github.com/zeMirco/lockit-signup">lockit-signup</a></li>
+<li><a href="https://github.com/zeMirco/lockit-delete-account">lockit-delete-account</a></li>
+<li><a href="https://github.com/zeMirco/lockit-forgot-password">lockit-forgot-password</a></li>
+<li><a href="https://github.com/zeMirco/lockit-sendmail">lockit-sendmail</a></li>
+<li><a href="https://github.com/zeMirco/lockit-couchdb-adapter">lockit-couchdb-adapter</a></li>
+<li><a href="https://github.com/zeMirco/lockit-mongodb-adapter">lockit-mongodb-adapter</a></li>
+<li><a href="https://github.com/zeMirco/lockit-utilities">lockit-utilities</a></li>
+<li><a href="https://github.com/zeMirco/lockit-template-blank">lockit-template-blank</a></li>
+</ul>
+
+
+<p>When you have problems please try to open an issue in the according repository.</p>
+
+<h3>How to use</h3>
+
+<p>Install the module and the adapter for your database (couchdb or mongodb) via npm</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>npm install lockit lockit-couchdb-adapter</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Create a <code>config.js</code> in your <code>app/</code> folder with your database settings</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// database settings for CouchDB</span>
+</span><span class='line'><span class="nx">exports</span><span class="p">.</span><span class="nx">db</span> <span class="o">=</span> <span class="s1">&#39;couchdb&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="nx">exports</span><span class="p">.</span><span class="nx">dbUrl</span> <span class="o">=</span> <span class="s1">&#39;http://127.0.0.1:5984/test&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// or if you want to use MongoDB</span>
+</span><span class='line'><span class="c1">// exports.db = &#39;mongodb&#39;;</span>
+</span><span class='line'><span class="c1">// exports.dbUrl = &#39;mongodb://127.0.0.1/test&#39;;</span>
+</span><span class='line'><span class="c1">// exports.dbCollection = &#39;users&#39;;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Important!</strong> If you are using CouchDB you need to create the necessary views first.
+Lockit comes with a helper file that does it automatically for you. Simply run</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">config</span><span class="o">=</span><span class="p">[</span><span class="nx">PATH</span><span class="p">]</span> <span class="nx">node</span> <span class="nx">node_modules</span><span class="o">/</span><span class="nx">lockit</span><span class="o">/</span><span class="nx">createCouchViews</span><span class="p">.</span><span class="nx">js</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>[PATH] should be the location of your config.js, i.e.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">config</span><span class="o">=</span><span class="p">.</span><span class="o">/</span><span class="nx">config</span><span class="p">.</span><span class="nx">js</span> <span class="nx">node</span> <span class="nx">node_modules</span><span class="o">/</span><span class="nx">lockit</span><span class="o">/</span><span class="nx">createCouchViews</span><span class="p">.</span><span class="nx">js</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you don&#8217;t use CouchDB you can simply continue here.</p>
+
+<p>Use both modules in your <code>app.js</code> file</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">config</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./config.js&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">lockit</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;lockit&#39;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Activate the module by calling the main <code>lockit()</code> function</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// ... express stuff</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// use middleware before router so your own routes have access to</span>
+</span><span class='line'><span class="c1">// req.session.email and req.session.username</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// sessions have to be enabled!</span>
+</span><span class='line'><span class="nx">lockit</span><span class="p">(</span><span class="nx">app</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ... more express stuff</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Include <a href="http://getbootstrap.com/">bootstrap</a> css in your views/layout.jade</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">link</span><span class="p">(</span><span class="nx">rel</span><span class="o">=</span><span class="s1">&#39;stylesheet&#39;</span><span class="p">,</span> <span class="nx">href</span><span class="o">=</span><span class="s1">&#39;/css/bootstrap.min.css&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Start your app like always with <code>node app.js</code>, open the browser and navigate to <a href="http://localhost:3000/signup">localhost:3000/signup</a>.
+I&#8217;ve also included an <a href="https://github.com/zeMirco/lockit/tree/master/example">example app</a> that you can download and run locally.
+It has a special route <code>/profile</code> which demonstrates how to get user information from db and show them
+in the browser.</p>
+
+<p>You&#8217;ll notice that nothing happens after you&#8217;ve signed up although
+you should see a message that an email has been sent to you.
+If you take a look at your database however, you should be able to see your just created user.
+So the user is created but the email is simply not sent.</p>
+
+<p>That&#8217;s because the email service is not set up yet.
+By default all email communication is stubbed (no emails are sent).
+You need to have your own email service in order to send emails when a user signs up or
+requests a new password. Under the hood lockit uses <a href="https://github.com/andris9/Nodemailer">nodemailer</a> to send emails.
+You can therefore use the same configuration in your <code>config.js</code> file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// default settings</span>
+</span><span class='line'><span class="nx">exports</span><span class="p">.</span><span class="nx">emailType</span> <span class="o">=</span> <span class="s1">&#39;Stub&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="nx">exports</span><span class="p">.</span><span class="nx">emailSettings</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">service</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nx">auth</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">user</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">pass</span><span class="o">:</span> <span class="s1">&#39;none&#39;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// change them to something similar like</span>
+</span><span class='line'><span class="c1">// exports.emailType = &#39;SMTP&#39;;</span>
+</span><span class='line'><span class="c1">// exports.emailSettings = {</span>
+</span><span class='line'><span class="c1">//   service: &#39;Gmail&#39;,</span>
+</span><span class='line'><span class="c1">//   auth: {</span>
+</span><span class='line'><span class="c1">//     user: &#39;gmail.user@gmail.com&#39;,</span>
+</span><span class='line'><span class="c1">//     pass: &#39;userpass&#39;</span>
+</span><span class='line'><span class="c1">//   }</span>
+</span><span class='line'><span class="c1">// };</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now you are good to go. You can also change all the other stuff like email template,
+welcome text, title and subject of the emails, etc. Take a look at the <a href="https://github.com/zeMirco/lockit#configuration">lockit#configuration</a>
+part at GitHub to see all possibilities.</p>
+
+<h3>FAQ</h3>
+
+<ol>
+<li><p>How is this different to <a href="http://passportjs.org/">passport</a>?</p>
+
+<p>   Passport offers different strategies (local, OpenID, OAuth) for authentication.
+   It assumes that you already have users in your db and only handles login, logout and route restriction.
+   It does not send any emails on signup or when a user forgot a password.
+   You can think of Lockit as a layer before Passport. I haven&#8217;t tried it yet but it should work
+   to use Lockit for signup, forgot password, delete account and on top of that Passport with
+   the <a href="https://github.com/jaredhanson/passport-local">local strategy</a>.</p></li>
+<li><p>Why didn&#8217;t you use <a href="http://www.mozilla.org/en-US/persona/">Persona</a>?</p>
+
+<p>   Well, I&#8217;ve tried Persona and like it a lot for simple web based solutions. However authentication
+   solutions should work on all devices and for all platforms. One big problem is that Persona does
+   not work with PhoneGap and other environments that break when opening popups. See the related
+   <a href="https://github.com/mozilla/persona/issues/2034">issue #2034</a>.</p></li>
+<li><p>What about a SaaS solution like <a href="https://www.userapp.io/">userapp</a>?</p>
+
+<p>   User information is the most valuable, critical and sensible data.
+   Users trust you to handle them with care.
+   Therefore I don&#8217;t like giving them away.</p></li>
+</ol>
+
+
+<h3>Conclusion</h3>
+
+<p>Please give <a href="https://github.com/zeMirco/lockit">lockit</a> a try. Leave comments, feedback and issues
+ on GitHub or here in the comments.</p>
+
+<p>I&#8217;m not a security expert although I&#8217;ve read a lot about this topic while developing lockit.
+So use it with care and probably do not use it for production yet. I&#8217;m sure there is room for improvements.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -3453,510 +3708,6 @@ I haven&#8217;t yet implemented this feature but will do so in the near future a
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/mozilla-persona-example-app-with-express-and-couchdb/">Mozilla Persona Example App With Express and CouchDB</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-05-03T20:25:00+02:00" pubdate data-updated="true">May 3<span>rd</span>, 2013</time>
-        
-         | <a href="/mozilla-persona-example-app-with-express-and-couchdb/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><a href="https://developer.mozilla.org/en-US/docs/Persona">Mozilla Persona</a> gained a lot of attention recently.
-The developers have released <a href="http://identity.mozilla.com/post/47541633049/persona-beta-2">Beta 2</a> at the
-beginning of last month and aim to bring Persona to <a href="https://blog.mozilla.org/beyond-the-code/2013/04/09/persona-beta2/">half of the worldwide Internet population</a> in the near future.</p>
-
-<p>Although Mozilla has a <a href="https://developer.mozilla.org/en-US/docs/Persona/Quick_Setup">quick setup guide</a> to demonstrate the basic implementation
-it is not as trivial to create a fully featured web app with <a href="http://www.adambarth.com/papers/2008/barth-jackson-mitchell-b.pdf">CSRF protection</a>,
-<a href="https://developer.mozilla.org/en-US/docs/Security/CSP">Content Security Policy</a> and database in the backend. That&#8217;s why I wrote
-this simple example application to learn more about the system and help others to get started.</p>
-
-<p>The app is built on the following open source stack</p>
-
-<ul>
-<li><a href="http://couchdb.apache.org/">CouchDB</a> hosted at <a href="https://cloudant.com/">Cloudant</a></li>
-<li><a href="https://github.com/dscape/nano">nano</a></li>
-<li><a href="http://expressjs.com/">Express</a></li>
-<li><a href="https://github.com/mikeal/request">Request</a></li>
-<li><a href="http://jquery.com/">jQuery</a></li>
-<li><a href="http://twitter.github.io/bootstrap/">Bootstrap</a></li>
-</ul>
-
-
-<p>To see the demo visit <a href="http://mysterious-coast-9759.herokuapp.com/">mysterious-coast-9759.herokuapp.com</a>. The code is available at
-GitHub <a href="https://github.com/zeMirco/mozilla-persona-express-couchdb/">mozilla-persona-express-couchdb</a>.</p>
-
-<p><img src="https://s3.amazonaws.com/mircozeiss.com/mozilla-persona-example.png" title="Mozilla Persona example app with Express and CouchDB" ></p>
-
-<h3>Related projects</h3>
-
-<p>Several other examples already exist. Take a look at</p>
-
-<ul>
-<li><a href="https://github.com/mozilla/123done">123done</a></li>
-<li><a href="https://github.com/lloyd/node.js-persona-example">node.js-persona-example</a></li>
-<li><a href="https://github.com/lloyd/myfavoritebeer.org">myfavoritebeer.org</a></li>
-<li><a href="https://github.com/mozilla/browserid-cookbook/tree/master/node-express">browserid-cookbook</a></li>
-</ul>
-
-
-<p>They were the foundation and inspiration for my own project. Without them I couldn&#8217;t have done it. Therefore, thanks to the authors!
-Especially to <a href="http://lloyd.io/">Lloyd Hilaiel</a>, <a href="http://fmarier.org/">Francois Marier</a> and <a href="https://shanetomlinson.com/">Shane Tomlinson</a>.</p>
-
-<p>However, all of the examples were missing some features I&#8217;d like to see. These are</p>
-
-<ul>
-<li>proper DB implementation</li>
-<li>CSRF protection</li>
-<li>Content Security Policy (CSP)</li>
-<li>cookie for <code>loggedInUser</code> variable</li>
-<li>use of request module (imho makes code easier to read)</li>
-<li>simplicity</li>
-</ul>
-
-
-<p>So I tried to take the best parts from the above examples and throw them together in my own app.</p>
-
-<h3>Getting started</h3>
-
-<p>I won&#8217;t cover the basic implementation. Read more about those steps in <a href="https://developer.mozilla.org/en-US/docs/Persona/Quick_Setup">quick setup</a>.
-I&#8217;d like to focus more on the advanced stuff.</p>
-
-<p>Let&#8217;s start by implementing our database. We want to save our users identified by their email address and an additional property, which is the username.
-As we are using CouchDB a sample document looks like the following.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="s2">&quot;_id&quot;</span><span class="o">:</span> <span class="s2">&quot;mirco.zeiss@gmail.com&quot;</span><span class="p">,</span>
-</span><span class='line'>   <span class="s2">&quot;_rev&quot;</span><span class="o">:</span> <span class="s2">&quot;31-a51c569f771348de72f06a0886b51ab0&quot;</span><span class="p">,</span>
-</span><span class='line'>   <span class="s2">&quot;username&quot;</span><span class="o">:</span> <span class="s2">&quot;zeMirco&quot;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Every time a user logs in with Persona <code>navigator.id.request()</code> is called and a <code>POST</code> request to <code>/auth/login</code> is made.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">onlogin</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">assertion</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">token</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#token&#39;</span><span class="p">).</span><span class="nx">val</span><span class="p">();</span>
-</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/auth/login&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">assertion</span><span class="o">:</span> <span class="nx">assertion</span><span class="p">,</span> <span class="nx">_csrf</span><span class="o">:</span> <span class="nx">token</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">reload</span><span class="p">();</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We&#8217;ll get to the <code>token</code> and <code>_csrf</code> stuff later in this post. On the server the assertion is verified by posting it and the <code>audience</code> to Mozilla.
-As soon as we get a valid answer back we have to do the following:</p>
-
-<ol>
-<li>Check if the email is stored in our db</li>
-<li>If not create a new user with an empty <code>username</code> property and save him to the db</li>
-<li>If the email is already present in our db do nothing (we have a returning user)</li>
-</ol>
-
-
-<p>Unfortunately Persona doesn&#8217;t tell us whether the user is a new or existing one. That&#8217;s why we have to check for existence on every login. CouchDB provides a handy feature to check for document existence. Instead of making a full <code>GET</code> request with the email as <code>key</code>
-we can simply use a lightweight <code>HEAD</code> request. Read more about this trick at <a href="http://eclipsesource.com/blogs/2013/03/01/use-your-head-checking-couchdb-document-existence/">Use your head checking CouchDB document existence</a>.
-If we get back an error with status code <code>404</code> we have a new user. Therefore save him to db.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">db</span><span class="p">.</span><span class="nx">head</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">,</span> <span class="nx">header</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">&amp;&amp;</span> <span class="nx">err</span><span class="p">.</span><span class="nx">status_code</span> <span class="o">===</span> <span class="mi">404</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="c1">// email is not in db</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">doc</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">username</span><span class="o">:</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>    <span class="nx">db</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">doc</span><span class="p">,</span> <span class="nx">email</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">body</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">resp</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">})</span>
-</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>    <span class="c1">// email is already stored in db</span>
-</span><span class='line'>    <span class="nx">resp</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sweet, we can now save our users to db and differentiate between new and existing ones. Problem is we somehow have to remember who is logged in and who isn&#8217;t.
-We don&#8217;t want ours users to make the login call on every request. Therefore we have to use <strong>sessions</strong>.</p>
-
-<h3>Cookie session</h3>
-
-<p>Express offers cookie based session support via the <a href="http://www.senchalabs.org/connect/">connect</a> <a href="http://www.senchalabs.org/connect/cookieSession.html">cookieSession</a> middleware.
-You could also use Mozilla&#8217;s own implementation <a href="https://github.com/mozilla/node-client-sessions">node-client-sessions</a> or some key value stores like Redis.
-Read more about the pros and cons of cookies vs stores at <a href="https://hacks.mozilla.org/2012/12/using-secure-client-side-sessions-to-build-simple-and-scalable-node-js-applications-a-node-js-holiday-season-part-3/">Using secure client-side sessions to build simple and scalable Node.JS applications</a>.</p>
-
-<p>To enable cookie sessions in Express add the following middleware to your config.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// built in middleware</span>
-</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">express</span><span class="p">.</span><span class="nx">cookieParser</span><span class="p">(</span><span class="s1">&#39;your secret here&#39;</span><span class="p">));</span>
-</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">express</span><span class="p">.</span><span class="nx">cookieSession</span><span class="p">());</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You can now create sessions on login <code>req.session.email = email</code> and destroy them on logout <code>req.session = null</code>. Our users can also
-visit the <code>/profile</code> route which is protected and not accessible for users without any valid session.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="c1">// middleware to restrict access to internal routes like /profile</span>
-</span><span class='line'><span class="kd">function</span> <span class="nx">restrict</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">next</span><span class="p">();</span>
-</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// use the middleware in your routes</span>
-</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/profile&#39;</span><span class="p">,</span> <span class="nx">restrict</span><span class="p">,</span> <span class="nx">profile</span><span class="p">.</span><span class="nx">get</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Content Security Policy</h3>
-
-<p><a href="https://developer.mozilla.org/en-US/docs/Security/CSP">Content Security Policy</a> (simply said) tells the browser to use JavaScript (and images, style sheets, frames, etc.)
-only from your own domain while forbidding inline script and script from third party URLs. It adds another layer of security against XSS attacks.</p>
-
-<p><a href="https://github.com/evilpacket/helmet">Helmet</a> is a great middleware to set CSP headers in Express. It also offers several other layers of security.
-In my app I&#8217;ll write the headers by hand as it only requires a few lines of code.</p>
-
-<p>Check for browser support and implementation at <a href="http://caniuse.com/#feat=contentsecuritypolicy">caniuse#contentsecuritypolicy</a>.
-Firefox and IE10 need the <code>X-Content-Security-Policy</code> header while Safari and Chrome need <code>X-WebKit-CSP</code>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">policy</span> <span class="o">=</span>  <span class="s2">&quot;default-src &#39;self&#39;;&quot;</span> <span class="o">+</span>
-</span><span class='line'>              <span class="s2">&quot;frame-src &#39;self&#39; https://login.persona.org;&quot;</span> <span class="o">+</span>
-</span><span class='line'>              <span class="s2">&quot;script-src &#39;self&#39; &#39;unsafe-inline&#39; https://login.persona.org;&quot;</span> <span class="o">+</span>
-</span><span class='line'>              <span class="s2">&quot;style-src &#39;self&#39; &#39;unsafe-inline&#39;&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="c1">// Firefox and Internet Explorer</span>
-</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">header</span><span class="p">(</span><span class="s2">&quot;X-Content-Security-Policy&quot;</span><span class="p">,</span> <span class="nx">policy</span><span class="p">);</span>
-</span><span class='line'>  <span class="c1">// Safari and Chrome</span>
-</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">header</span><span class="p">(</span><span class="s2">&quot;X-WebKit-CSP&quot;</span><span class="p">,</span> <span class="nx">policy</span><span class="p">);</span>
-</span><span class='line'>  <span class="c1">// continue with next middleware</span>
-</span><span class='line'>  <span class="nx">next</span><span class="p">();</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In theory adding <code>'unsafe-inline'</code> shouldn&#8217;t be necessary but I got errors in Chrome caused by jQuery. Maybe they are related to <a href="http://bugs.jquery.com/ticket/13507">jQuery bug #13507</a>.
-You can verify the headers in the browser&#8217;s development tools.</p>
-
-<p><img src="https://s3.amazonaws.com/mircozeiss.com/persona-csp.png" title="Content Security Policy Headers" ></p>
-
-<h3>CSRF protection</h3>
-
-<p>A great explanation for Cross-Site Request Forgery is the paper <a href="http://www.adambarth.com/papers/2008/barth-jackson-mitchell-b.pdf">Robust Defenses for Cross-Site Request Forgery</a>.
-Express provides a built in middleware <a href="http://www.senchalabs.org/connect/csrf.html">csrf</a> which makes the use of CSRF very easy.</p>
-
-<p>Our own custom middleware makes the <code>token</code> variable available to all our views and we can use it whenever we have to change the state on the server.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">locals</span><span class="p">.</span><span class="nx">token</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">_csrf</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">next</span><span class="p">();</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>That&#8217;s usually done by adding a hidden input field to the forms.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='jade'><span class='line'><span class="nt">form</span><span class="nf">#login</span><span class="nc">.navbar-form.pull-right</span>
-</span><span class='line'>  <span class="nt">input</span><span class="nf">#token</span>(<span class="na">type=</span><span class="s">&quot;hidden&quot;</span><span class="err">,</span> <span class="na">name=</span><span class="s">&quot;_csrf&quot;</span><span class="err">,</span> <span class="na">value=</span><span class="nv">token</span>)
-</span><span class='line'>  <span class="nt">button</span><span class="nc">.btn</span>(<span class="na">type=</span><span class="s">&quot;submit&quot;</span>) Login
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The token is sent to the server and <code>app.use(express.csrf());</code> checks if it is equal to <code>req.session._csrf</code>. If it isn&#8217;t Express throws a <code>403</code> error.
-We not only have to include the token in forms but also when we make ajax requests.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">token</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#token&#39;</span><span class="p">).</span><span class="nx">val</span><span class="p">();</span>
-</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/auth/login&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">assertion</span><span class="o">:</span> <span class="nx">assertion</span><span class="p">,</span> <span class="nx">_csrf</span><span class="o">:</span> <span class="nx">token</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nb">window</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">reload</span><span class="p">();</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>That explains the additional <code>_csrf</code> key.</p>
-
-<h3>Sending <em>loggedInUser</em> from server to client JavaScript</h3>
-
-<p>The <a href="https://developer.mozilla.org/en-US/docs/DOM/navigator.id.watch"><code>navigator.id.watch</code></a> function requires the <code>loggedInUser</code> parameter,
-which tells Persona what you believe about the user&#8217;s state.</p>
-
-<p><a href="https://github.com/mozilla/123done/blob/master/static/js/123done.js#L42-L44">123done</a> makes a GET request to <code>/api/auth_status</code> in order to get <code>loggedInUser</code></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/api/auth_status&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">loggedInEmail</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">data</span><span class="p">).</span><span class="nx">logged_in_email</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>and the server responds with the current session.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/api/auth_status&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span>
-</span><span class='line'>    <span class="nx">logged_in_email</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">user</span> <span class="o">||</span> <span class="kc">null</span><span class="p">,</span>
-</span><span class='line'>  <span class="p">}));</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><a href="https://github.com/lloyd/node.js-persona-example/blob/master/views/index.ejs#L15">node.js-persona-example</a> uses inline JavaScript
-and puts the variable via <a href="https://github.com/visionmedia/ejs">ejs</a> directly into the view.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'>navigator.id.watch({
-</span><span class='line'>  loggedInUser: <span class="err">&lt;</span>%- JSON.stringify(email) %&gt;,
-</span><span class='line'>  ...
-</span><span class='line'>})
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The server renders the view with the local variable <code>email</code> with holds the current session.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;index.ejs&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">email</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span> <span class="o">||</span> <span class="kc">null</span> <span class="p">});</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><a href="https://github.com/lloyd/myfavoritebeer.org/blob/master/static/js/main.js#L135-L138">myfavoritebeer.org</a> also makes a GET request. This time to <code>/api/whoami</code>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/api/whoami&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="kc">null</span><span class="p">)</span> <span class="nx">loggedOut</span><span class="p">();</span>
-</span><span class='line'>  <span class="k">else</span> <span class="nx">loggedIn</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-</span><span class='line'><span class="p">},</span> <span class="s1">&#39;json&#39;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The server responds with the email from the current session and the corresponding image from <a href="https://www.libravatar.org/">Libravatar</a>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;/api/whoami&quot;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">session</span> <span class="o">&amp;&amp;</span> <span class="k">typeof</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span> <span class="o">===</span> <span class="s1">&#39;string&#39;</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">respondWithUserInfo</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">respondWithUserInfo</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">libravatar</span><span class="p">.</span><span class="nx">url</span><span class="p">({</span><span class="nx">email</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">,</span> <span class="nx">size</span><span class="o">:</span> <span class="mi">32</span><span class="p">,</span> <span class="nx">http</span><span class="o">:</span> <span class="kc">false</span><span class="p">},</span>
-</span><span class='line'>    <span class="kd">function</span> <span class="p">(</span><span class="nx">error</span><span class="p">,</span> <span class="nx">avatar</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="s1">&#39;email&#39;</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">,</span> <span class="s1">&#39;avatar&#39;</span><span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">});</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>      <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="s1">&#39;email&#39;</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">,</span> <span class="s1">&#39;avatar&#39;</span><span class="o">:</span> <span class="nx">avatar</span><span class="p">});</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Last but not least <a href="https://github.com/mozilla/browserid-cookbook/blob/master/node-express/views/layout.jade#L17-L22">browserid-cookbook</a>
-uses inline script (this time with Jade instead ejs) to pass the current user to the frontend.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='jade'><span class='line'><span class="nt">if</span> user
-</span><span class='line'>  <span class="nt">script</span>
-</span><span class='line'>    <span class="nt">var</span> loggedInUser = &#39;<span class="si">#{</span><span class="n">user</span><span class="si">}</span>&#39;;
-</span><span class='line'><span class="nt">else</span>
-</span><span class='line'>  <span class="nt">script</span>
-</span><span class='line'>    <span class="nt">var</span> loggedInUser = null;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The server sets the local variable <code>loggedInUser</code> from the current session.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">exports</span><span class="p">.</span><span class="nx">index</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">resp</span><span class="p">){</span>
-</span><span class='line'>  <span class="nx">resp</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Express&#39;</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">user</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">csrf</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">_csrf</span>
-</span><span class='line'>  <span class="p">})</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In summary two examples use inline script and two use extra GET requests. What&#8217;s the better implementation?</p>
-
-<p>In my opinion both aren&#8217;t perfect. Inline script is probably the easiest but worst solution, as it won&#8217;t work with a strict Content Security Policy.
-An extra GET request costs time and you have to implement an additional route on your server. That&#8217;s why I chose a third solution. I use cookies to send
-the current user from our backend to the frontend. Mozilla also recommends this way.</p>
-
-<blockquote><p>&#8230; you might examine the browser&#8217;s cookies to determine who is signed in.</p></blockquote>
-
-<p>We can set the cookie via a custom middleware. If the user isn&#8217;t logged in and doesn&#8217;t have a valid session no cookie is needed.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">session</span><span class="p">.</span><span class="nx">email</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="nx">next</span><span class="p">();</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On the client we can read the cookie via the awesome <a href="https://github.com/carhartl/jquery-cookie">jquery-cookie</a> plugin.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">email</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">)</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cookies have the advantage that they save the extra request to the server and don&#8217;t require inline script.</p>
-
-<h3>Conclusion</h3>
-
-<p>A few more steps than just the quick setup are needed to build a full featured web app based on Mozilla Persona. However it isn&#8217;t rocket science and I&#8217;ve learned a lot while developing this app.
-Persona is a great technology and admins will have less to worry about, as no passwords are stored in the db.</p>
-
-<p>I&#8217;m sure my example is far from being perfect so if you see any mistakes or find room for improvements please open an <a href="https://github.com/zeMirco/mozilla-persona-express-couchdb/issues">issue</a> at GitHub.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/page/2/">&larr; Older</a>
@@ -3972,6 +3723,10 @@ Persona is a great technology and admins will have less to worry about, as no pa
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/lockit-an-express-authentication-solution/">Lockit - an Express authentication solution</a>
+      </li>
+    
+      <li class="post">
         <a href="/pouchdb-vs-couchbase-lite-a-performance-review/">PouchDB vs. Couchbase Lite - a performance review</a>
       </li>
     
@@ -3985,10 +3740,6 @@ Persona is a great technology and admins will have less to worry about, as no pa
     
       <li class="post">
         <a href="/github-like-signup-form-with-angularjs-and-bootstrap-v3/">GitHub like signup form with AngularJS and Bootstrap v3</a>
-      </li>
-    
-      <li class="post">
-        <a href="/sync-multiple-angularjs-apps-without-server-via-pouchdb/">Sync multiple AngularJS apps without server via PouchDB</a>
       </li>
     
   </ul>
@@ -4013,7 +3764,7 @@ Persona is a great technology and admins will have less to worry about, as no pa
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2013 - Mirco Zeiss -
+  Copyright &copy; 2014 - Mirco Zeiss -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
